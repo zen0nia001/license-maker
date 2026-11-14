@@ -93,6 +93,9 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .issued button { grid-row: 1 / span 2; grid-column: 2; align-self: center; }
 .tag { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 5px; font: 700 .7rem var(--mono); background: var(--seal-soft); color: var(--seal); vertical-align: 1px; }
 details summary { cursor: pointer; font-weight: 600; }
+/* Your payment details: a box that stands out, not a plain line. */
+#payBox { border: 1px solid var(--seal); border-radius: 12px; padding: 12px 14px; background: var(--seal-soft); }
+#payBox summary { color: var(--ink); }
 .stack { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 </style>
 </head>
@@ -620,7 +623,18 @@ $('forgetBtn').addEventListener('click', () => {
   $('startDay').value = storeToday(); $('startDay').min = storeToday();
   setPlan('trial');
   render();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { /* online-only then */ });
+  if ('serviceWorker' in navigator) {
+    // A new version took over (downloaded in the background): show it at once, unless a key is
+    // unlocked (reloading would lock it); then it shows from the next start.
+    const hadOne = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadOne && !reloaded && !privateKey) { reloaded = true; location.reload(); }
+    });
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+      .then((reg) => reg.update())
+      .catch(() => { /* online-only then */ });
+  }
 })();
 </script>
 </body>
