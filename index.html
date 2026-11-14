@@ -90,7 +90,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .issued li:first-child { border-top: none; }
 .issued .who { font-weight: 600; overflow-wrap: anywhere; }
 .issued .meta { grid-column: 1; font: .78rem var(--mono); color: var(--muted); }
-.issued button { grid-row: 1 / span 2; grid-column: 2; align-self: center; }
+.issued .acts { grid-row: 1 / span 2; grid-column: 2; align-self: center; display: flex; gap: 6px; }
+.issued li.old { opacity: .55; }
 .tag { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 5px; font: 700 .7rem var(--mono); background: var(--seal-soft); color: var(--seal); vertical-align: 1px; }
 details summary { cursor: pointer; font-weight: 600; }
 /* Your payment details: a box that stands out, not a plain line. */
@@ -429,17 +430,54 @@ function renderIssued() {
   const list = store.get(ISSUED_STORE) || [];
   show($('issuedCard'), list.length > 0);
   const ul = $('issuedList'); ul.textContent = '';
+  // Newest first: the first key seen for an installation is its current one; older ones were replaced.
+  const seen = new Set();
   for (const item of list.slice(0, 50)) {
-    const li = document.createElement('li');
+    const id = `${item.product}|${item.iid}`;
+    const current = !seen.has(id); seen.add(id);
+    const li = document.createElement('li'); if (!current) li.className = 'old';
     const who = document.createElement('div'); who.className = 'who';
     const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = item.product;
     who.append(tag, document.createTextNode(item.customer));
     const meta = document.createElement('div'); meta.className = 'meta';
-    meta.textContent = `${PLAN_LABELS[item.plan] ? PLAN_LABELS[item.plan] + ' · ' : ''}${item.iid} · through ${fmtDay(item.lastDay)}`;
+    meta.textContent = `${PLAN_LABELS[item.plan] ? PLAN_LABELS[item.plan] + ' · ' : ''}${item.iid} · through ${fmtDay(item.lastDay)}${current ? '' : ' · replaced'}`;
+    const acts = document.createElement('div'); acts.className = 'acts';
+    if (current && privateKey) {
+      const renewBtn = document.createElement('button'); renewBtn.className = 'small'; renewBtn.textContent = 'Renew';
+      renewBtn.addEventListener('click', () => renew(item));
+      acts.appendChild(renewBtn);
+    }
     const btn = document.createElement('button'); btn.className = 'small'; btn.textContent = 'Copy';
     btn.addEventListener('click', () => copy(item.license, btn, null));
-    li.append(who, btn, meta); ul.appendChild(li);
+    const del = document.createElement('button'); del.className = 'small'; del.textContent = '✕';
+    del.title = 'Delete from this list'; del.setAttribute('aria-label', `Delete ${item.customer} from this list`);
+    del.addEventListener('click', () => removeIssued(item));
+    acts.append(btn, del);
+    li.append(who, acts, meta); ul.appendChild(li);
   }
+}
+
+/** Takes a key off this phone's list (e.g. a test installation). The key itself still works where it
+ *  was pasted, until its last day: a key can't be switched off. */
+function removeIssued(item) {
+  if (!confirm(`Delete ${item.customer} (${item.iid}, through ${fmtDay(item.lastDay)}) from this list?\n\nThis only removes it from this phone. If the key was pasted into a POS or hub, it keeps working there until its last day.`)) return;
+  const list = (store.get(ISSUED_STORE) || []).filter((x) => !(x.lid === item.lid && x.license === item.license));
+  store.set(ISSUED_STORE, list);
+  renderIssued();
+}
+
+/** Fills "Make a license" for this client's next key: same app, Installation ID and customer, the same
+ *  paid plan (a trial becomes Monthly), starting the day after the current key ends (or today). */
+function renew(item) {
+  setProduct(item.product);
+  $('iid').value = item.iid;
+  $('cust').value = item.customer;
+  const dayAfter = addDays(item.lastDay, 1);
+  $('startDay').value = dayAfter > storeToday() ? dayAfter : storeToday();
+  setPlan(item.plan === 'yearly' ? 'yearly' : 'monthly');
+  show($('resultCard'), false);
+  say($('makeMsg'), `Renewing ${item.customer}: check the plan and "Starts on", then tap Make license.`, 'ok');
+  $('makeCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function copy(text, button, selectEl) {
