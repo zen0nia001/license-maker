@@ -68,8 +68,10 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 
 .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .seg button[aria-pressed="true"] { background: var(--seal-soft); border-color: var(--seal); color: var(--ink); }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chips button { padding: 6px 11px; font-size: .86rem; border-radius: 999px; }
+.seg.plans { grid-template-columns: repeat(4, 1fr); }
+.seg.plans button { padding-left: 4px; padding-right: 4px; }
+.seg.plans small { display: block; font-size: .72rem; font-weight: 500; color: var(--muted); }
+@media (max-width: 360px) { .seg.plans { grid-template-columns: 1fr 1fr; } }
 
 .msg { padding: 10px 12px; border-radius: 10px; font-size: .92rem; }
 .msg.bad { background: var(--bad-soft); color: var(--bad); }
@@ -163,14 +165,22 @@ details summary { cursor: pointer; font-weight: 600; }
       <input id="cust" autocomplete="off" placeholder="e.g. Juan's Hardware">
     </div>
     <div>
+      <label>Plan</label>
+      <div class="seg plans" role="group" aria-label="Plan">
+        <button type="button" data-plan="trial" aria-pressed="true">Free trial<small>14 days</small></button>
+        <button type="button" data-plan="monthly" aria-pressed="false">Monthly<small>1 month</small></button>
+        <button type="button" data-plan="yearly" aria-pressed="false">Yearly<small>1 year</small></button>
+        <button type="button" data-plan="" aria-pressed="false">Custom<small>any date</small></button>
+      </div>
+    </div>
+    <div id="startRow" hidden>
+      <label for="startDay">Starts on</label>
+      <input type="date" id="startDay">
+      <p class="small muted" style="margin-top: 6px">Today for a new subscription. Renewing before the current license ends? Pick the day after it ends, so no paid days are lost.</p>
+    </div>
+    <div>
       <label for="lastDay">Valid through (last day it works)</label>
       <input type="date" id="lastDay">
-      <div class="chips" style="margin-top: 8px">
-        <button type="button" data-months="1">1 month</button>
-        <button type="button" data-months="6">6 months</button>
-        <button type="button" data-months="12">1 year</button>
-        <button type="button" data-months="24">2 years</button>
-      </div>
       <p class="small muted" style="margin-top: 6px" id="lastDayNote"></p>
     </div>
     <div id="makeMsg"></div>
@@ -281,7 +291,7 @@ async function verifyLicense(publicKey, text) {
   catch { return { ok: false, error: 'The key is in a format this app does not know.' }; }
 }
 
-async function makeLicense(privateKey, publicKey, { product, installationId, customer, lastDay, now = new Date() }) {
+async function makeLicense(privateKey, publicKey, { product, installationId, customer, lastDay, plan = null, now = new Date() }) {
   const prefix = PRODUCTS[product];
   const iid = installationId.trim().toUpperCase();
   if (!prefix) throw new Error('Choose POS or SPX.');
@@ -291,6 +301,7 @@ async function makeLicense(privateKey, publicKey, { product, installationId, cus
   const exp = expiresAt(lastDay);
   if (exp <= now) throw new Error('That date is already past. Choose a later one.');
   const payload = { v: 1, lid: newLicenseId(), cust: customer.trim(), iid, iat: isoUtc(now), exp: isoUtc(exp) };
+  if (plan) payload.plan = plan; // "trial" | "monthly" | "yearly"; older app versions ignore it
   const body = UTF8.encode(JSON.stringify(payload));
   const signature = new Uint8Array(await crypto.subtle.sign(SIGN, privateKey, signedBytes(prefix, body)));
   const license = `${prefix}.${b64url(body)}.${b64url(signature)}`;
@@ -354,9 +365,22 @@ const fmtDay = (day) => new Date(day + 'T12:00:00Z').toLocaleDateString(undefine
 /** The last day for an expiry (it ends at midnight after that day, store time). */
 const lastDayOf = (expIso) => new Date(new Date(expIso).getTime() + STORE_OFFSET_HOURS * 3600e3 - 1).toISOString().slice(0, 10);
 const storeToday = () => new Date(Date.now() + STORE_OFFSET_HOURS * 3600e3).toISOString().slice(0, 10);
+/** Same day `months` later, held to the month's last day (Jan 31 + 1 month = Feb 28), like the PC tool. */
 function addMonths(day, months) {
   const [y, m, d] = day.split('-').map(Number);
-  return new Date(Date.UTC(y, m - 1 + months, d)).toISOString().slice(0, 10);
+  const last = new Date(Date.UTC(y, m - 1 + months + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(y, m - 1 + months, Math.min(d, last))).toISOString().slice(0, 10);
+}
+function addDays(day, days) {
+  const [y, m, d] = day.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+const TRIAL_DAYS = 14;
+const PLAN_LABELS = { trial: 'Free trial', monthly: 'Monthly', yearly: 'Yearly' };
+/** The last day of a plan whose first day is `start` (that day counts): Nov 14 gives trial Nov 27, monthly Dec 13. */
+function planEnd(plan, start) {
+  if (plan === 'trial') return addDays(start, TRIAL_DAYS - 1);
+  return addDays(addMonths(start, plan === 'monthly' ? 1 : 12), -1);
 }
 const savedBox = () => store.get(KEY_STORE) || sessionBox;
 
@@ -384,7 +408,7 @@ function renderIssued() {
     const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = item.product;
     who.append(tag, document.createTextNode(item.customer));
     const meta = document.createElement('div'); meta.className = 'meta';
-    meta.textContent = `${item.iid} · through ${fmtDay(item.lastDay)}`;
+    meta.textContent = `${PLAN_LABELS[item.plan] ? PLAN_LABELS[item.plan] + ' · ' : ''}${item.iid} · through ${fmtDay(item.lastDay)}`;
     const btn = document.createElement('button'); btn.className = 'small'; btn.textContent = 'Copy';
     btn.addEventListener('click', () => copy(item.license, btn, null));
     li.append(who, btn, meta); ul.appendChild(li);
@@ -495,28 +519,40 @@ function updateDayNote() {
 }
 $('lastDay').addEventListener('input', updateDayNote);
 $('lastDay').addEventListener('change', updateDayNote);
-document.querySelectorAll('.chips button').forEach((b) => b.addEventListener('click', () => {
-  $('lastDay').value = addMonths(storeToday(), Number(b.dataset.months)); updateDayNote();
-}));
+let plan = 'trial';
+/** A plan sets the end date (a trial from today; monthly / yearly from "Starts on"); Custom lets you pick it. */
+function setPlan(p) {
+  plan = p;
+  document.querySelectorAll('.plans button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.plan === p)));
+  show($('startRow'), p === 'monthly' || p === 'yearly');
+  $('lastDay').readOnly = !!p;
+  if (p) $('lastDay').value = planEnd(p, p === 'trial' ? storeToday() : ($('startDay').value || storeToday()));
+  updateDayNote();
+}
+document.querySelectorAll('.plans button').forEach((b) => b.addEventListener('click', () => setPlan(b.dataset.plan)));
+$('startDay').addEventListener('change', () => {
+  if ($('startDay').value < storeToday()) $('startDay').value = storeToday();
+  setPlan(plan);
+});
 $('makeBtn').addEventListener('click', async () => {
   say($('makeMsg'), '');
   $('makeBtn').disabled = true;
   try {
     const lastDay = $('lastDay').value;
     const { license, payload } = await makeLicense(privateKey, publicKey, {
-      product, installationId: $('iid').value, customer: $('cust').value, lastDay,
+      product, installationId: $('iid').value, customer: $('cust').value, lastDay, plan: plan || null,
     });
-    $('resultTitle').textContent = `${product} license ready`;
+    $('resultTitle').textContent = `${product} ${plan === 'trial' ? 'trial' : 'license'} ready`;
     $('resultKey').textContent = license;
     const facts = $('resultFacts'); facts.textContent = '';
-    for (const [k, v, mono] of [['Customer', payload.cust], ['Installation', payload.iid, true], ['Works through', fmtDay(lastDay)], ['License no.', payload.lid, true]]) {
+    for (const [k, v, mono] of [['Plan', PLAN_LABELS[payload.plan] || 'Custom'], ['Customer', payload.cust], ['Installation', payload.iid, true], ['Works through', fmtDay(lastDay)], ['License no.', payload.lid, true]]) {
       const dt = document.createElement('dt'); dt.textContent = k;
       const dd = document.createElement('dd'); dd.textContent = v; if (mono) dd.className = 'mono';
       facts.append(dt, dd);
     }
     show($('resultCard'), true);
     const list = store.get(ISSUED_STORE) || [];
-    list.unshift({ product, customer: payload.cust, iid: payload.iid, lastDay, lid: payload.lid, license, at: payload.iat });
+    list.unshift({ product, plan: payload.plan || null, customer: payload.cust, iid: payload.iid, lastDay, lid: payload.lid, license, at: payload.iat });
     store.set(ISSUED_STORE, list.slice(0, 500));
     renderIssued();
     $('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -533,7 +569,7 @@ $('checkBtn').addEventListener('click', async () => {
   if (!r.ok) return say(out, r.error);
   const p = r.payload;
   const expired = new Date(p.exp) <= new Date();
-  say(out, `Genuine ${r.product} license for ${p.cust}, installation ${p.iid}. Works through ${fmtDay(lastDayOf(p.exp))}${expired ? ' (expired)' : ''}. License no. ${p.lid}.`, expired ? 'warn' : 'ok');
+  say(out, `Genuine ${r.product} ${PLAN_LABELS[p.plan] ? PLAN_LABELS[p.plan].toLowerCase() + ' ' : ''}license for ${p.cust}, installation ${p.iid}. Works through ${fmtDay(lastDayOf(p.exp))}${expired ? ' (expired)' : ''}. License no. ${p.lid}.`, expired ? 'warn' : 'ok');
 });
 
 // Remove the key
@@ -547,7 +583,8 @@ $('forgetBtn').addEventListener('click', () => {
 (async () => {
   try { publicKey = await importPublicKey(); }
   catch { say($('setupMsg'), 'This browser can\'t make licenses. Use Safari on iPhone or Chrome on Android.'); }
-  $('lastDay').value = addMonths(storeToday(), 12); updateDayNote();
+  $('startDay').value = storeToday(); $('startDay').min = storeToday();
+  setPlan('trial');
   render();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { /* online-only then */ });
 })();

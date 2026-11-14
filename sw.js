@@ -1,7 +1,7 @@
 // Keeps the License Maker working without internet: the app's few files are stored on the phone at
 // the first visit and served from there. When online, a newer version is fetched in the background
 // and used from the next start. Nothing else goes through here: the app makes no other requests.
-const CACHE = 'license-maker-v1';
+const CACHE = 'license-maker-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

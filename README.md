@@ -10,6 +10,9 @@ sent anywhere. Without it, this app can't make a single license.
 - Signing: ECDSA P-256 / SHA-256 with the browser's built-in Web Crypto, in the same format as the
   desktop license tool (`POS1.` / `SPX1.` + payload + signature). Every key it makes is checked
   against the public key before it is shown.
+- Plans: Free trial (14 days), Monthly or Yearly, signed into the key (`"plan"`), with the end
+  date filled in (the first day counts; a renewal can start on a later "Starts on" day), or a
+  custom end date (no plan, like older keys). Same rules as the desktop tool's `--plan`.
 - Offline: a service worker keeps the app's files on the phone; it makes no other network requests
   (see the Content-Security-Policy in `index.html`).
 
