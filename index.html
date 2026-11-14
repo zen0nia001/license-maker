@@ -171,7 +171,7 @@ details summary { cursor: pointer; font-weight: 600; }
     <div>
       <label>Plan</label>
       <div class="seg plans" role="group" aria-label="Plan">
-        <button type="button" data-plan="trial" aria-pressed="true">Free trial<small>14 days</small></button>
+        <button type="button" data-plan="trial" aria-pressed="true">Free trial<small>3 days</small></button>
         <button type="button" data-plan="monthly" aria-pressed="false">Monthly<small>1 month</small></button>
         <button type="button" data-plan="yearly" aria-pressed="false">Yearly<small>1 year</small></button>
         <button type="button" data-plan="" aria-pressed="false">Custom<small>any date</small></button>
@@ -319,6 +319,8 @@ async function makeLicense(privateKey, publicKey, { product, installationId, cus
   if (exp <= now) throw new Error('That date is already past. Choose a later one.');
   const payload = { v: 1, lid: newLicenseId(), cust: customer.trim(), iid, iat: isoUtc(now), exp: isoUtc(exp) };
   if (plan) payload.plan = plan; // "trial" | "monthly" | "yearly"; older app versions ignore it
+  // A trial ends by midnight after its 3rd day (today counts): never longer.
+  if (plan === 'trial' && exp.getTime() - now.getTime() > TRIAL_DAYS * 864e5) throw new Error(`A free trial is ${TRIAL_DAYS} days at most.`);
   const payText = (pay || '').split('\n').map((l) => l.trim()).filter(Boolean).join('\n');
   if (payText.length > 500) throw new Error('The payment details are longer than 500 characters.');
   if (payText) payload.pay = payText; // shown on the client's trial notice and license screen
@@ -368,6 +370,8 @@ function boxOfBackupCode(code) {
     return box;
   } catch { throw new Error('The locked backup code is incomplete. Copy all of it again.'); }
 }
+/** A free trial is this many days at most (the first day counts). */
+const TRIAL_DAYS = 3;
 // CORE-END
 
 // ---- App ----------------------------------------------------------------------------------------
@@ -403,7 +407,6 @@ function addDays(day, days) {
   const [y, m, d] = day.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 }
-const TRIAL_DAYS = 14;
 const PLAN_LABELS = { trial: 'Free trial', monthly: 'Monthly', yearly: 'Yearly' };
 /** The last day of a plan whose first day is `start` (that day counts): Nov 14 gives trial Nov 27, monthly Dec 13. */
 function planEnd(plan, start) {
