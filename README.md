@@ -13,6 +13,10 @@ sent anywhere. Without it, this app can't make a single license.
 - Plans: Free trial (14 days), Monthly or Yearly, signed into the key (`"plan"`), with the end
   date filled in (the first day counts; a renewal can start on a later "Starts on" day), or a
   custom end date (no plan, like older keys). Same rules as the desktop tool's `--plan`.
+- Payment details: "How the client pays you" (kept on the phone) goes into every key (`"pay"`),
+  and the apps show it on the last-5-days banner, the license screen and Settings → License.
+- "I've paid": your Messenger username and mobile number (kept on the phone) go into every key
+  (`"msgr"`, `"tel"`), so the client's "I've paid" button can send you their payment reference.
 - Offline: a service worker keeps the app's files on the phone; it makes no other network requests
   (see the Content-Security-Policy in `index.html`).
 

@@ -183,6 +183,19 @@ details summary { cursor: pointer; font-weight: 600; }
       <input type="date" id="lastDay">
       <p class="small muted" style="margin-top: 6px" id="lastDayNote"></p>
     </div>
+    <details id="payBox">
+      <summary>How the client pays you <span class="small muted" id="paySummary"></span></summary>
+      <div style="margin-top: 8px">
+        <label for="pay">Shown on the client's trial notice and license screen (one item per line)</label>
+        <textarea id="pay" maxlength="500" spellcheck="false" placeholder="GCash: 0917 000 0000 (Juan D.)&#10;BDO: 0000 0000 0000&#10;Send the reference to: 0917 000 0000" style="min-height: 90px"></textarea>
+        <p class="small muted" style="margin-top: 6px">Kept on this phone and put into every key you make, so the client can't change it. Leave empty for none.</p>
+        <div class="row" style="margin-top: 10px">
+          <div style="flex: 1 1 160px"><label for="msgr">Your Messenger username</label><input id="msgr" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="m.me/juan.delacruz"></div>
+          <div style="flex: 1 1 140px"><label for="tel">Your mobile (SMS)</label><input id="tel" inputmode="tel" autocomplete="off" placeholder="0917 000 0000"></div>
+        </div>
+        <p class="small muted" style="margin-top: 6px">The client's "I've paid" button sends you their payment reference here, with their Installation ID.</p>
+      </div>
+    </details>
     <div id="makeMsg"></div>
     <button class="primary" id="makeBtn">Make license</button>
   </section>
@@ -291,7 +304,7 @@ async function verifyLicense(publicKey, text) {
   catch { return { ok: false, error: 'The key is in a format this app does not know.' }; }
 }
 
-async function makeLicense(privateKey, publicKey, { product, installationId, customer, lastDay, plan = null, now = new Date() }) {
+async function makeLicense(privateKey, publicKey, { product, installationId, customer, lastDay, plan = null, pay = '', messenger = '', mobile = '', now = new Date() }) {
   const prefix = PRODUCTS[product];
   const iid = installationId.trim().toUpperCase();
   if (!prefix) throw new Error('Choose POS or SPX.');
@@ -302,6 +315,15 @@ async function makeLicense(privateKey, publicKey, { product, installationId, cus
   if (exp <= now) throw new Error('That date is already past. Choose a later one.');
   const payload = { v: 1, lid: newLicenseId(), cust: customer.trim(), iid, iat: isoUtc(now), exp: isoUtc(exp) };
   if (plan) payload.plan = plan; // "trial" | "monthly" | "yearly"; older app versions ignore it
+  const payText = (pay || '').split('\n').map((l) => l.trim()).filter(Boolean).join('\n');
+  if (payText.length > 500) throw new Error('The payment details are longer than 500 characters.');
+  if (payText) payload.pay = payText; // shown on the client's trial notice and license screen
+  const msgr = (messenger || '').trim().replace(/^(https?:\/\/)?(www\.)?(m\.me|facebook\.com|fb\.com)\//i, '').replace(/\/+$/, '');
+  if (msgr && !/^[A-Za-z0-9.]{3,50}$/.test(msgr)) throw new Error('That Messenger username looks wrong: use the name in m.me/juan.delacruz.');
+  if (msgr) payload.msgr = msgr; // "I've paid" opens m.me/<this>
+  const tel = (mobile || '').replace(/[\s()-]/g, '');
+  if (tel && !/^\+?[0-9]{7,15}$/.test(tel)) throw new Error('That mobile number looks wrong.');
+  if (tel) payload.tel = tel; // "I've paid" by SMS
   const body = UTF8.encode(JSON.stringify(payload));
   const signature = new Uint8Array(await crypto.subtle.sign(SIGN, privateKey, signedBytes(prefix, body)));
   const license = `${prefix}.${b64url(body)}.${b64url(signature)}`;
@@ -348,6 +370,8 @@ function boxOfBackupCode(code) {
 const $ = (id) => document.getElementById(id);
 const KEY_STORE = 'licenseMaker.key';
 const ISSUED_STORE = 'licenseMaker.issued';
+const PAY_STORE = 'licenseMaker.pay';
+const CONTACT_STORE = 'licenseMaker.contact';
 const store = {
   get(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
@@ -519,6 +543,13 @@ function updateDayNote() {
 }
 $('lastDay').addEventListener('input', updateDayNote);
 $('lastDay').addEventListener('change', updateDayNote);
+function updatePaySummary() {
+  const first = $('pay').value.trim().split('\n')[0];
+  $('paySummary').textContent = first ? `(${first}${$('pay').value.trim().includes('\n') ? ', …' : ''})` : '(none yet)';
+}
+$('pay').addEventListener('input', () => { store.set(PAY_STORE, $('pay').value); updatePaySummary(); });
+for (const id of ['msgr', 'tel']) $(id).addEventListener('input', () => store.set(CONTACT_STORE, { msgr: $('msgr').value, tel: $('tel').value }));
+
 let plan = 'trial';
 /** A plan sets the end date (a trial from today; monthly / yearly from "Starts on"); Custom lets you pick it. */
 function setPlan(p) {
@@ -540,12 +571,12 @@ $('makeBtn').addEventListener('click', async () => {
   try {
     const lastDay = $('lastDay').value;
     const { license, payload } = await makeLicense(privateKey, publicKey, {
-      product, installationId: $('iid').value, customer: $('cust').value, lastDay, plan: plan || null,
+      product, installationId: $('iid').value, customer: $('cust').value, lastDay, plan: plan || null, pay: $('pay').value, messenger: $('msgr').value, mobile: $('tel').value,
     });
     $('resultTitle').textContent = `${product} ${plan === 'trial' ? 'trial' : 'license'} ready`;
     $('resultKey').textContent = license;
     const facts = $('resultFacts'); facts.textContent = '';
-    for (const [k, v, mono] of [['Plan', PLAN_LABELS[payload.plan] || 'Custom'], ['Customer', payload.cust], ['Installation', payload.iid, true], ['Works through', fmtDay(lastDay)], ['License no.', payload.lid, true]]) {
+    for (const [k, v, mono] of [['Plan', PLAN_LABELS[payload.plan] || 'Custom'], ['Customer', payload.cust], ['Installation', payload.iid, true], ['Works through', fmtDay(lastDay)], ['How to pay', payload.pay ? payload.pay.replace(/\n/g, ' · ') : 'Not included'], ["I've paid to", [payload.msgr && `Messenger ${payload.msgr}`, payload.tel && `SMS ${payload.tel}`].filter(Boolean).join(', ') || 'Not included'], ['License no.', payload.lid, true]]) {
       const dt = document.createElement('dt'); dt.textContent = k;
       const dd = document.createElement('dd'); dd.textContent = v; if (mono) dd.className = 'mono';
       facts.append(dt, dd);
@@ -583,6 +614,9 @@ $('forgetBtn').addEventListener('click', () => {
 (async () => {
   try { publicKey = await importPublicKey(); }
   catch { say($('setupMsg'), 'This browser can\'t make licenses. Use Safari on iPhone or Chrome on Android.'); }
+  $('pay').value = store.get(PAY_STORE) || '';
+  const contact = store.get(CONTACT_STORE) || {}; $('msgr').value = contact.msgr || ''; $('tel').value = contact.tel || '';
+  updatePaySummary();
   $('startDay').value = storeToday(); $('startDay').min = storeToday();
   setPlan('trial');
   render();
