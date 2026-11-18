@@ -25,7 +25,7 @@ export const AppPage: React.FC<{ app: string; tab: Tab; query: URLSearchParams }
     return (
       <>
         <Msg>There's no app "{app}" here.</Msg>
-        <a href={href.home}>← Your apps</a>
+        <a href={href.apps}>← Your apps</a>
       </>
     );
   }

@@ -6,6 +6,10 @@ export type Tab = (typeof TABS)[number];
 
 export type Route =
   | { page: 'home' }
+  | { page: 'dashboard' }
+  | { page: 'clients' }
+  | { page: 'apps' }
+  | { page: 'inbox' }
   | { page: 'app'; app: string; tab: Tab; query: URLSearchParams }
   | { page: 'settings' }
   | { page: 'check' }
@@ -22,6 +26,10 @@ export function parse(hash: string): Route {
   }
   if (parts[0] === 'store') return { page: 'store', app: parts[1] ? decodeURIComponent(parts[1]) : null };
   if (parts[0] === 'add') return { page: 'add' };
+  if (parts[0] === 'dashboard') return { page: 'dashboard' };
+  if (parts[0] === 'clients') return { page: 'clients' };
+  if (parts[0] === 'apps') return { page: 'apps' };
+  if (parts[0] === 'inbox') return { page: 'inbox' };
   if (parts[0] === 'settings') return { page: 'settings' };
   if (parts[0] === 'check') return { page: 'check' };
   return { page: 'home' };
@@ -32,6 +40,10 @@ export const href = {
   settings: '#/settings',
   check: '#/check',
   add: '#/add',
+  dashboard: '#/dashboard',
+  clients: '#/clients',
+  apps: '#/apps',
+  inbox: '#/inbox',
   store: (id?: string) => (id ? `#/store/${encodeURIComponent(id)}` : '#/store'),
   app: (id: string, tab: Tab = 'overview', query?: Record<string, string>) =>
     `#/app/${encodeURIComponent(id)}${tab === 'overview' ? '' : `/${tab}`}${query ? `?${new URLSearchParams(query)}` : ''}`,

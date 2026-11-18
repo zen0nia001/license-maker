@@ -2,12 +2,11 @@
 import { PRODUCTS, type ProductCode } from './license/core';
 import type { Installation, LicenseRequest, Listing, Product } from './control/types';
 
-type Look = { icon: string; color: string; tagline: string };
+type Look = { icon: string; tagline: string };
 
-/** An app's icon, colour and line, with plain defaults for an app whose listing isn't written yet. */
+/** An app's icon and line, with plain defaults for an app whose listing isn't written yet. */
 export const lookOf = (p: Listing): Look => ({
   icon: p.icon || p.name.slice(0, 1).toUpperCase(),
-  color: p.color || '#64748b',
   tagline: p.tagline || '',
 });
 

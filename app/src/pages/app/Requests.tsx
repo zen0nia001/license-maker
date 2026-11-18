@@ -28,13 +28,14 @@ export const Requests: React.FC<TabProps> = ({ product }) => {
       {shown.length === 0 ? (
         <p className="muted small">No requests in the last week. Clients send them from the app: I've paid, or Ask my provider for a free trial.</p>
       ) : (
-        <ul className="list">{shown.map((r) => <Row key={r.id} request={r} />)}</ul>
+        <ul className="list">{shown.map((r) => <RequestRow key={r.id} request={r} />)}</ul>
       )}
     </Card>
   );
 };
 
-const Row: React.FC<{ request: LicenseRequest }> = ({ request: r }) => {
+/** One request: who, which plan, the payment reference; approve or decline while it waits. */
+export const RequestRow: React.FC<{ request: LicenseRequest; showApp?: boolean }> = ({ request: r, showApp }) => {
   const control = useControl();
   const signing = useSigning();
   const [customer, setCustomer] = useState(r.installation.customer || r.installation.label || '');
@@ -62,7 +63,7 @@ const Row: React.FC<{ request: LicenseRequest }> = ({ request: r }) => {
 
   return (
     <li className={r.status === 'pending' ? undefined : 'old'}>
-      <div className="who"><Tag>{PLAN_LABELS[r.plan]}</Tag>{name}</div>
+      <div className="who">{showApp && <Tag>{r.product.name}</Tag>}<Tag>{PLAN_LABELS[r.plan]}</Tag>{name}</div>
       <div className="meta">{[r.paymentReference && `ref ${r.paymentReference}`, `asked ${ago(r.createdAt)}`].filter(Boolean).join(' · ')}</div>
       <div className="chips wide">
         {r.status === 'approved' && <Chip tone="warn">Key sent: the app picks it up within a minute</Chip>}

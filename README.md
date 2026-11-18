@@ -4,7 +4,12 @@ The owner's home for every app (POS, SPX Hub and the ones to come), and where li
 out of **License Maker** and lives at the same address, https://zen0nia001.github.io/license-maker/, so a phone that
 already has License Maker keeps its locked key, payment details and key history.
 
-- **Apps** (home): every app as a card, with what needs you (license requests waiting, installations to look at).
+- **Home**: what **needs you** (license requests, new or troubled installations) as swipeable cards, **your apps**
+  with their numbers, and the big picture (apps, installations, clients).
+- **Dashboard**: apps, clients, installations, licenses ending in 30 days, locked installations and requests
+  waiting; installations per app, license health (a ring chart), licenses ending soon (Renew), versions running.
+- **Clients**: everyone running your apps (from their installations), searchable, with each license's state.
+- **Apps**: every app as a tile (on the store or not), and **Add app**. **Inbox**: every app's license requests.
 - **An app's page**: Overview · Installations · Requests · Keys · Store listing.
   - *Installations*: every installation that checks in with Control (version, license, backups, disk, alerts);
     name it, accept or ignore it, **Make a key for it**.
@@ -23,6 +28,15 @@ already has License Maker keeps its locked key, payment details and key history.
 
 Without Control (an address with no Control set up, like GitHub Pages until Control is deployed) the apps,
 Keys, Check and Settings work as License Maker did; installations and requests say Control isn't connected.
+
+## Design
+
+Control Center's own design: simple and monochrome. Black, white and greys, crisp borders and plenty of space; a
+side rail (folds to icons; a drawer on phones), light and dark. Colour only where it means something: a small
+status dot, and red for errors. App icons are the listing's emoji on a neutral tile. The icons are drawn for this
+app (`app/src/components/Icon.tsx`); the type is Manrope (SIL Open Font License, Latin only, bundled). The portal
+idea (a needs-you area, connected apps, a dashboard, clients) was inspired by BizBox Accounts; no look, code,
+icons or assets were taken from it.
 
 ## Security
 

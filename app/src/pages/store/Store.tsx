@@ -4,6 +4,7 @@ import type { Listing, StoreDetails } from '../../lib/control/types';
 import { href } from '../../router';
 import { AppIcon } from '../../components/AppIcon';
 import { Msg } from '../../components/ui';
+import { Icon, Logo } from '../../components/Icon';
 
 type StoreData = { store: StoreDetails; apps: Listing[] };
 
@@ -36,22 +37,19 @@ export const StorePage: React.FC<{ app: string | null }> = ({ app }) => {
   const one = app && data ? data.apps.find((a) => a.id === app) : null;
   return (
     <>
-      <header className="topbar">
-        <div className="topbar-in">
-          <a className="brand" href={href.store()}><span className="brand-name" style={{ display: 'inline' }}>{name}</span></a>
-        </div>
+      <header className="store-top">
+        <a className="store-brand" href={href.store()}><Logo size={30} /> {name}</a>
+        <h1>{app ? one?.name ?? name : name}</h1>
+        {!app && data?.store.about && <p>{data.store.about}</p>}
+        {app && one?.tagline && <p>{one.tagline}</p>}
       </header>
-      <main className="main">
+      <main className="store-main">
         {error && <Msg tone="info">{error}</Msg>}
-        {!data && !error && <p className="muted">Loading…</p>}
+        {!data && !error && <div className="card"><p className="muted">Loading…</p></div>}
         {data && !app && (
           <>
-            <div>
-              <h1>{name}</h1>
-              {data.store.about && <p className="muted">{data.store.about}</p>}
-            </div>
             {data.apps.length === 0 ? (
-              <p className="muted">No apps here yet.</p>
+              <div className="card"><p className="muted">No apps here yet.</p></div>
             ) : (
               <div className="apps">
                 {data.apps.map((a) => (
@@ -70,8 +68,10 @@ export const StorePage: React.FC<{ app: string | null }> = ({ app }) => {
         )}
         {data && app && (
           <>
-            <a href={href.store()} className="small">← All apps</a>
-            {one ? <StoreAppDetail app={one} store={data.store} /> : <Msg tone="info">This app isn't on the store.</Msg>}
+            <div className="card">
+              {one ? <StoreAppDetail app={one} store={data.store} /> : <Msg tone="info">This app isn't on the store.</Msg>}
+            </div>
+            <a href={href.store()} className="small"><Icon name="left" size={16} /> All apps</a>
           </>
         )}
       </main>
@@ -94,7 +94,7 @@ export const StoreAppDetail: React.FC<{ app: Listing; store: StoreDetails | null
       {app.description && <p className="store-text">{app.description}</p>}
       {app.features.length > 0 && (
         <ul className="store-features">
-          {app.features.map((f) => <li key={f}>{f}</li>)}
+          {app.features.map((f) => <li key={f}><Icon name="check" size={18} />{f}</li>)}
         </ul>
       )}
       {(app.priceMonthly || app.priceYearly) && (

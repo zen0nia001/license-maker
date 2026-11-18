@@ -9,12 +9,12 @@ import { StoreAppDetail } from '../store/Store';
 import type { TabProps } from './AppPage';
 
 type Draft = {
-  name: string; tagline: string; description: string; icon: string; color: string;
+  name: string; tagline: string; description: string; icon: string;
   priceMonthly: string; priceYearly: string; features: string; published: boolean;
 };
 
 const draftOf = (p: Product): Draft => ({
-  name: p.name, tagline: p.tagline ?? '', description: p.description ?? '', icon: p.icon ?? '', color: p.color ?? '#64748b',
+  name: p.name, tagline: p.tagline ?? '', description: p.description ?? '', icon: p.icon ?? '',
   priceMonthly: p.priceMonthly ?? '', priceYearly: p.priceYearly ?? '', features: p.features.join('\n'), published: p.published,
 });
 
@@ -34,7 +34,7 @@ export const Listing: React.FC<TabProps> = ({ product }) => {
     setError(null);
     try {
       await api('PATCH', `/owner/products/${encodeURIComponent(product.id)}`, {
-        name: draft.name, tagline: draft.tagline, description: draft.description, icon: draft.icon, color: draft.color,
+        name: draft.name, tagline: draft.tagline, description: draft.description, icon: draft.icon,
         priceMonthly: draft.priceMonthly, priceYearly: draft.priceYearly, features, published: draft.published,
       });
       await control.reload();
@@ -52,7 +52,6 @@ export const Listing: React.FC<TabProps> = ({ product }) => {
         <div className="row">
           <Field label="Name"><input value={draft.name} maxLength={40} onChange={(e) => set('name', e.target.value)} /></Field>
           <Field label="Icon (an emoji)"><input value={draft.icon} maxLength={8} onChange={(e) => set('icon', e.target.value)} placeholder="🧾" /></Field>
-          <Field label="Colour"><input type="color" value={draft.color} onChange={(e) => set('color', e.target.value)} style={{ height: 46, padding: 4 }} /></Field>
         </div>
         <Field label="One line about it"><input value={draft.tagline} maxLength={80} onChange={(e) => set('tagline', e.target.value)} placeholder="e.g. Point of sale for shops" /></Field>
         <Field label="Description" hint="What it does and who it's for. Plain text; line breaks are kept.">

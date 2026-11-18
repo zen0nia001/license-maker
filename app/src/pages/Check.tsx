@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fmtDay, importPublicKey, lastDayOf, PLAN_LABELS, verifyLicense } from '../lib/license/core';
-import { Card, Msg } from '../components/ui';
+import { Card, Msg, PageHead } from '../components/ui';
 
 /** Check a license key someone sends: is it genuine, for whom, until when. Works offline. */
 export const Check: React.FC = () => {
@@ -25,7 +25,7 @@ export const Check: React.FC = () => {
 
   return (
     <>
-      <h1>Check a license key</h1>
+      <PageHead eyebrow="Is it genuine, for whom, until when" title="Check a key" />
       <Card>
         <textarea value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} placeholder="POS1.… or SPX1.…" />
         <button className="primary" disabled={!text.trim() || !publicKey} onClick={() => void check()}>Check</button>

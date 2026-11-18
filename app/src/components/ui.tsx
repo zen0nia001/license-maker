@@ -97,3 +97,23 @@ export const ActionButton: React.FC<{ onClick: () => Promise<void>; className?: 
     </>
   );
 };
+
+/** A page's title row: a small line above it, the title, and actions on the right. */
+export const PageHead: React.FC<{ eyebrow?: React.ReactNode; title: React.ReactNode; actions?: React.ReactNode }> = ({ eyebrow, title, actions }) => (
+  <div className="page-head">
+    <div>
+      {eyebrow && <span className="eyebrow">{eyebrow}</span>}
+      <h1>{title}</h1>
+    </div>
+    {actions && <div className="card-actions">{actions}</div>}
+  </div>
+);
+
+/** Nothing to show, said kindly. */
+export const Empty: React.FC<{ icon?: React.ReactNode; children: React.ReactNode }> = ({ icon, children }) => (
+  <div className="empty">{icon}<div>{children}</div></div>
+);
+
+/** Two letters for a name ("Juan's Hardware" → JH). */
+export const initials = (name: string) =>
+  name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join('') || '?';

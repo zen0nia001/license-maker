@@ -4,13 +4,13 @@ import type { Product } from '../lib/control/types';
 import { go, href } from '../router';
 import { useControl } from '../state/control';
 import { NeedsControl } from './app/AppPage';
-import { Card, Field, Msg, Say } from '../components/ui';
+import { Card, Field, Msg, PageHead, Say } from '../components/ui';
 
 /** "Add app": a new app Control knows, so it gets a page, a store listing, and (once its app has the provider
  *  connection and its key prefix built in) installations, requests and keys. */
 export const AddApp: React.FC = () => (
   <>
-    <h1>Add an app</h1>
+    <PageHead eyebrow="A new app you sell" title="Add an app" />
     <NeedsControl><AddAppForm /></NeedsControl>
   </>
 );

@@ -6,12 +6,13 @@
 //
 // Notifications: Control sends an empty push when a client asks for a license; this shows a fixed notice (the push
 // carries no content, so the push service learns nothing) and opens the app on a tap.
-const CACHE = 'control-center-afadc4da9841';
+const CACHE = 'control-center-df6cca4d11d6';
 const FILES = [
   "./",
   "./index.html",
-  "./assets/index-ChlhIGM2.css",
-  "./assets/index-BdXy5TI7.js",
+  "./assets/manrope-latin-wght-normal-DHIcAJRg.woff2",
+  "./assets/index--8qlWY3T.css",
+  "./assets/index-Bkrw-yv-.js",
   "./apple-touch-icon.png",
   "./icon-192.png",
   "./icon-512.png",

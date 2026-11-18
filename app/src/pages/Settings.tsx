@@ -8,12 +8,12 @@ import { href } from '../router';
 import { useControl } from '../state/control';
 import { useSigning } from '../state/signing';
 import { ControlSignIn } from '../components/ControlSignIn';
-import { ActionButton, Card, CopyButton, Field, Msg, Say, Segmented } from '../components/ui';
+import { ActionButton, Card, CopyButton, Field, Msg, PageHead, Say, Segmented } from '../components/ui';
 import { UnlockInline } from './app/Keys';
 
 export const Settings: React.FC = () => (
   <>
-    <h1>Settings</h1>
+    <PageHead eyebrow="Your key, your store, your devices" title="Settings" />
     <div className="cols two">
       <div className="stack" style={{ gap: 16 }}>
         <SigningKeyCard />
