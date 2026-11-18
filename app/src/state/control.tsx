@@ -39,6 +39,24 @@ export const BUILT_IN_PRODUCTS: Product[] = [
   builtIn('spx', 'SPX Hub', 'SPX1', '🛵', '#ee4d2d', 'Records for SPX delivery hubs', 2),
 ];
 
+/** This device is the owner's: it has signed in to Control as the owner at least once. Then the bare address opens
+ *  the owner's home; on any other device it opens the store, or the client's own area (App.tsx). */
+const OWNER_DEVICE_KEY = 'controlCenter.ownerDevice';
+export const isOwnerDevice = () => {
+  try {
+    return localStorage.getItem(OWNER_DEVICE_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+const markOwnerDevice = () => {
+  try {
+    localStorage.setItem(OWNER_DEVICE_KEY, '1');
+  } catch {
+    /* this visit only */
+  }
+};
+
 const Ctx = createContext<ControlState | null>(null);
 export const useControl = () => {
   const c = useContext(Ctx);
@@ -93,6 +111,11 @@ export const ControlProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     void reload();
   }, [reload, signedIn]);
+
+  // Signed in as the owner: remember this device as the owner's.
+  useEffect(() => {
+    if (signedIn) markOwnerDevice();
+  }, [signedIn]);
 
   // Session ended (Control said 401): back to signed out.
   useEffect(() => onSignedOut(() => setSignedIn(false)), []);

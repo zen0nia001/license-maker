@@ -30,6 +30,11 @@ GitHub Pages address forwards there; a phone set up there needs **Settings → S
   they set up a passkey from your invite, then see their installations (license, backups, problems), **renew or ask**
   for a license (it reaches your Inbox like Send to my provider), their licenses with the key to copy, and messages
   with you. Its own page like the store: none of your menus, your session or your signing key.
+- **The address itself** is a front door: on your device (signed in as owner once, or with the signing key) it
+  opens your Home; on a client's device, their own page; for anyone else, the store, with **Owner sign in** at the
+  bottom (`#/owner`, for setting up a new device of yours).
+- **Inbox → Make a client**: turns a store inquiry into a client (name, business, contact, their message as your
+  note), ready to invite; if one with that contact exists, **Open client** instead.
 - **Check a key**: is a key genuine, for whom, until when.
 - **Settings**: the signing key (set up from the locked backup code or the key file, unlock, locked backup code,
   remove), the payment details written into every key, and Control (passkeys, notifications, sign out).

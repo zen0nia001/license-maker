@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { href, parse, useHash, type Route } from './router';
-import { useControl } from './state/control';
+import { isOwnerDevice, useControl } from './state/control';
+import { currentClientSession } from './lib/control/api';
 import { useSigning } from './state/signing';
 import { Icon, Logo, type IconName } from './components/Icon';
 import { Home } from './pages/Home';
@@ -36,8 +37,12 @@ export const App: React.FC = () => {
   const [mini, setMini] = useState(readMini);
   const [open, setOpen] = useState(false);
 
+  // The bare address is the front door: the owner's home only on the owner's device (signed in once, or the signing
+  // key is here); a client's device opens their own area, anyone else the store. #/owner always opens the owner's home.
+  const visitorAtFront = route.page === 'home' && !route.owner && !control.signedIn && !signing.hasKey && !isOwnerDevice();
+
   // The owner's pages are "Control Center" (the store and the client pages set their own title).
-  const ownerPage = route.page !== 'store' && route.page !== 'join' && route.page !== 'my';
+  const ownerPage = route.page !== 'store' && route.page !== 'join' && route.page !== 'my' && !visitorAtFront;
   useEffect(() => {
     if (ownerPage) document.title = 'Control Center';
   }, [ownerPage]);
@@ -53,6 +58,7 @@ export const App: React.FC = () => {
   // The client's side (their invite, their area): its own pages, none of the owner's.
   if (route.page === 'join') return <JoinPage key={route.token} token={route.token} />;
   if (route.page === 'my') return <MyPage tab={route.tab} />;
+  if (visitorAtFront) return currentClientSession() ? <MyPage tab="home" /> : <StorePage app={null} />;
 
   const groups: { label?: string; items: NavItem[] }[] = [
     {

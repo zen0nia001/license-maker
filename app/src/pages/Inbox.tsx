@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { api } from '../lib/control/api';
-import type { Inquiry } from '../lib/control/types';
+import type { Client, Inquiry } from '../lib/control/types';
 import { ago } from '../lib/format';
-import { href } from '../router';
+import { go, href } from '../router';
 import { useControl } from '../state/control';
 import { useSigning } from '../state/signing';
 import { Icon } from '../components/Icon';
@@ -61,6 +61,15 @@ const InquiryRow: React.FC<{ inquiry: Inquiry }> = ({ inquiry: q }) => {
     await api('PATCH', `/owner/inquiries/${encodeURIComponent(q.id)}`, { status });
     await control.reload();
   };
+  // Already a client? (same contact) Then open them; otherwise make one from this inquiry, ready to invite.
+  const existing = control.clients.find((c) => c.contactKind === q.contactKind && c.contact === q.contact);
+  const makeClient = async () => {
+    const note = [`From the store, ${new Date(q.createdAt).toLocaleDateString()}${q.product ? ` (about ${q.product.name})` : ''}.`, q.message].filter(Boolean).join(' ').slice(0, 1000);
+    const made = await api<Client>('POST', '/owner/clients', { name: q.name, business: q.business, contactKind: q.contactKind, contact: q.contact, note });
+    if (q.status === 'new') await api('PATCH', `/owner/inquiries/${encodeURIComponent(q.id)}`, { status: 'done' });
+    await control.reload();
+    go(href.client(made.id));
+  };
   const remove = async () => {
     if (!window.confirm(`Delete ${q.name}'s inquiry? Their details are gone for good.`)) return;
     await api('DELETE', `/owner/inquiries/${encodeURIComponent(q.id)}`);
@@ -75,6 +84,9 @@ const InquiryRow: React.FC<{ inquiry: Inquiry }> = ({ inquiry: q }) => {
         <div className="row" style={{ alignItems: 'center' }}>
           <a className="button primary" style={{ flex: '0 0 auto' }} href={reply.href} {...(reply.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{reply.label}</a>
           {q.contactKind === 'mobile' && <a className="button" style={{ flex: '0 0 auto' }} href={`tel:${q.contact}`}>Call</a>}
+          {existing
+            ? <a className="button" style={{ flex: '0 0 auto' }} href={href.client(existing.id)}>Open client</a>
+            : <div style={{ flex: '0 0 auto' }}><ActionButton onClick={makeClient}>Make a client</ActionButton></div>}
           <span style={{ flex: '1 1 auto' }} />
           {q.status === 'new'
             ? <div style={{ flex: '0 0 auto' }}><ActionButton className="small" onClick={() => setStatus('done')}>Mark done</ActionButton></div>

@@ -9,7 +9,8 @@ export const MY_TABS = ['home', 'licenses', 'messages'] as const;
 export type MyTab = (typeof MY_TABS)[number];
 
 export type Route =
-  | { page: 'home' }
+  /** owner: #/owner, the owner's home (and sign-in) even on a device that isn't known as the owner's. */
+  | { page: 'home'; owner?: boolean }
   | { page: 'dashboard' }
   | { page: 'clients' }
   | { page: 'client'; id: string }
@@ -33,6 +34,7 @@ export function parse(hash: string): Route {
     const tab = (TABS as readonly string[]).includes(parts[2] ?? '') ? (parts[2] as Tab) : 'overview';
     return { page: 'app', app: decodeURIComponent(parts[1]), tab, query: new URLSearchParams(search) };
   }
+  if (parts[0] === 'owner') return { page: 'home', owner: true };
   if (parts[0] === 'store') return { page: 'store', app: parts[1] ? decodeURIComponent(parts[1]) : null };
   if (parts[0] === 'add') return { page: 'add' };
   if (parts[0] === 'dashboard') return { page: 'dashboard' };
@@ -49,6 +51,7 @@ export function parse(hash: string): Route {
 
 export const href = {
   home: '#/',
+  owner: '#/owner',
   settings: '#/settings',
   check: '#/check',
   add: '#/add',
