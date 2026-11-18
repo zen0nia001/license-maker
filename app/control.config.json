@@ -1,0 +1,6 @@
+{
+  "//": "Where the Control service is, by the host this app is served from. The ONLY other address the app may call: vite.config.ts writes these into the Content-Security-Policy (connect-src). A host with no entry runs without Control (key making only). Add the production address when Control is deployed.",
+  "controlUrls": {
+    "localhost": "http://localhost:5070"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "control-center",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Control Center: the owner's home for every app (and License Maker's key signing). Source in app/, built into the repo root for GitHub Pages.",
+  "scripts": {
+    "dev": "vite --config app/vite.config.ts",
+    "build": "node app/scripts/clean.mjs && tsc -p app/tsconfig.json --noEmit && vite build --config app/vite.config.ts",
+    "preview": "vite preview --config app/vite.config.ts",
+    "typecheck": "tsc -p app/tsconfig.json --noEmit",
+    "test": "node app/scripts/check-core.mjs"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7",
+    "@vitejs/plugin-react": "4.7.0",
+    "typescript": "5.6.3",
+    "vite": "6.4.5"
+  }
+}

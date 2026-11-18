@@ -1,12 +1,22 @@
-// Keeps the License Maker working without internet: the app's few files are stored on the phone at
-// the first visit and served from there. When online, a newer version is fetched in the background
-// (past the browser's and GitHub's short-term caches) and the page reloads into it while locked
-// (index.html, "controllerchange"). Nothing else goes through here: its only other requests are control.js's to the Control service.
+// Control Center's service worker. The build (app/vite.config.ts, plugin "service-worker") writes it to sw.js
+// with __VERSION__ and __FILES__ filled in: every file of this build, stored on the device at install, so the app
+// (key making above all) works without internet from the first visit. When online, the page is fetched fresh;
+// a new deploy is a new version, which replaces the old files. Nothing else goes through here: the app's only
+// other requests are to Control, which this never stores.
 //
-// Notifications (Installs): Control sends an empty push when a client asks for a license; this shows a fixed
-// notice (the push carries no content, so the push service learns nothing) and opens the app on a tap.
-const CACHE = 'license-maker-v9';
-const FILES = ['./', './index.html', './control.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
+// Notifications: Control sends an empty push when a client asks for a license; this shows a fixed notice (the push
+// carries no content, so the push service learns nothing) and opens the app on a tap.
+const CACHE = 'control-center-b8c0048e49b2';
+const FILES = [
+  "./",
+  "./index.html",
+  "./assets/index-9BkY5sJ8.css",
+  "./assets/index-hCGhnlMk.js",
+  "./apple-touch-icon.png",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./manifest.webmanifest"
+];
 
 self.addEventListener('install', (e) => {
   // 'reload': straight from the server, never a stale copy the browser kept.
@@ -22,21 +32,20 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  if (e.request.method !== 'GET' || new URL(e.request.url).origin !== self.location.origin) return;
-  e.respondWith(caches.open(CACHE).then(async (cache) => {
-    const cached = await cache.match(e.request, { ignoreSearch: true });
-    // By URL: a page request ("navigate") can't be copied with other cache settings.
-    const fresh = fetch(e.request.url, { cache: 'no-cache', credentials: 'same-origin' }).then((res) => {
-      if (res.ok) cache.put(e.request, res.clone());
-      return res;
-    }).catch(() => cached);
-    return cached || fresh;
-  }));
+  const url = new URL(e.request.url);
+  if (e.request.method !== 'GET' || url.origin !== self.location.origin) return;
+  // The page: fresh when online (a new deploy shows), stored copy when not.
+  if (e.request.mode === 'navigate') {
+    e.respondWith(fetch(e.request).catch(() => caches.match('./index.html', { ignoreSearch: true }).then((r) => r || caches.match('./'))));
+    return;
+  }
+  // The build's files never change under the same name (hashed): stored copy first.
+  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((cached) => cached || fetch(e.request)));
 });
 
 self.addEventListener('push', (e) => {
-  e.waitUntil(self.registration.showNotification('License Maker', {
-    body: 'A client is waiting for a license. Open Installs.',
+  e.waitUntil(self.registration.showNotification('Control Center', {
+    body: 'A client is waiting for a license. Open the app.',
     icon: './icon-192.png',
     badge: './icon-192.png',
     tag: 'control',
