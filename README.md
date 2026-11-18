@@ -29,3 +29,16 @@ sent anywhere. Without it, this app can't make a single license.
 Make the locked backup code on your laptop once: open the same address there, choose **Key file**,
 pick `private-key.pem` and a password, then open **Locked backup code** and copy it. It's useless
 without the password, so it's safe to send to your phone or keep in Notes.
+
+## Installs (Control)
+
+The **Installs** card (`control.js`) shows every POS and SPX that checks in with the owner's Control service
+(`C:\Dev\Control`): version, license, backups, disk, and what needs a look. **Make a key for it** fills in the
+license form with that installation's app, Installation ID and customer.
+
+- Sign-in is a **passkey** on this device (the first one with Control's one-time setup code). The session is
+  a token in this tab only; the signing key is never sent anywhere, Control or otherwise.
+- The Control address is fixed in `control.js`, and the Content-Security-Policy allows exactly that address
+  besides the app's own (`connect-src`). Without an address for this host the card is hidden: today only
+  `localhost` (for testing at `http://localhost:3060`). Add the production address to **both** places
+  when Control is deployed.

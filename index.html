@@ -11,8 +11,9 @@
 <meta name="apple-mobile-web-app-title" content="Licenses">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="referrer" content="no-referrer">
-<!-- Nothing loads from anywhere else: no fonts, scripts or trackers. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<!-- Nothing loads from anywhere else: no fonts, scripts or trackers. The one other address it may call is the
+     Control service (control.js; only Control's exact address, never a wildcard). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://localhost:5070; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -98,6 +99,12 @@ details summary { cursor: pointer; font-weight: 600; }
 #payBox { border: 1px solid var(--seal); border-radius: 12px; padding: 12px 14px; background: var(--seal-soft); }
 #payBox summary { color: var(--ink); }
 .stack { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+/* Installs (control.js): each installation's alerts, and its details when opened. */
+.issued .alerts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px; }
+.alert { padding: 1px 8px; border-radius: 6px; font-size: .78rem; font-weight: 600; }
+.alert.bad { background: var(--bad-soft); color: var(--bad); }
+.alert.warn { background: var(--warn-soft); color: var(--warn); }
+.issued .detail { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
 </style>
 </head>
 <body>
@@ -217,6 +224,33 @@ details summary { cursor: pointer; font-weight: 600; }
   <section class="card" id="issuedCard" hidden>
     <h2>Made on this device</h2>
     <ul class="issued" id="issuedList"></ul>
+  </section>
+
+  <!-- Installs: every installation, from the Control service (control.js; hidden without a Control address) -->
+  <section class="card" id="controlCard" hidden>
+    <h2>Installs</h2>
+    <div id="controlSignedOut">
+      <p class="small muted">Every POS and SPX that checks in: its version, license, backups and disk. Sign in with this device's passkey.</p>
+      <div class="stack">
+        <button class="primary" id="controlSignInBtn" hidden>Sign in with passkey</button>
+        <div id="controlSetup" class="stack" hidden>
+          <p class="small muted">First time: type the setup code Control printed, and this device gets the passkey.</p>
+          <div><label for="controlSetupCode">Setup code</label><input id="controlSetupCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"></div>
+          <div><label for="controlDeviceName">This device</label><input id="controlDeviceName" autocomplete="off" placeholder="e.g. iPhone"></div>
+          <button class="primary" id="controlSetupBtn">Set up passkey</button>
+        </div>
+        <div id="controlAuthMsg"></div>
+      </div>
+    </div>
+    <div id="controlSignedIn" class="stack" style="margin-top: 0" hidden>
+      <div class="row" style="align-items: center">
+        <p class="small muted" id="controlSummary" style="flex: 3 1 200px"></p>
+        <button class="small" id="controlRefreshBtn" style="flex: 0 0 auto">Refresh</button>
+        <button class="small" id="controlSignOutBtn" style="flex: 0 0 auto">Sign out</button>
+      </div>
+      <div id="controlMsg"></div>
+      <ul class="issued" id="controlList"></ul>
+    </div>
   </section>
 
   <!-- Check a key someone sends -->
@@ -678,5 +712,6 @@ $('forgetBtn').addEventListener('click', () => {
   }
 })();
 </script>
+<script src="control.js"></script>
 </body>
 </html>

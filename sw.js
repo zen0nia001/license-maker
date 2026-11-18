@@ -1,9 +1,9 @@
 // Keeps the License Maker working without internet: the app's few files are stored on the phone at
 // the first visit and served from there. When online, a newer version is fetched in the background
 // (past the browser's and GitHub's short-term caches) and the page reloads into it while locked
-// (index.html, "controllerchange"). Nothing else goes through here: the app makes no other requests.
-const CACHE = 'license-maker-v7';
-const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
+// (index.html, "controllerchange"). Nothing else goes through here: its only other requests are control.js's to the Control service.
+const CACHE = 'license-maker-v8';
+const FILES = ['./', './index.html', './control.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
   // 'reload': straight from the server, never a stale copy the browser kept.
