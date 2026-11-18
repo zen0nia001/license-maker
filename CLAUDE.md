@@ -27,4 +27,6 @@ npm run preview    # the built app (service worker, CSP) on 3060
 - **Addresses**: the only extra address the app may call is Control's, per host in `app/control.config.json`; the
   build writes it into the CSP. No wildcards. Text only through React (no `dangerouslySetInnerHTML`).
 - **Control's API** is mirrored by hand in `app/src/lib/control/types.ts` (Control: `src/routes/*.ts`).
-- Pages by the hash (`app/src/router.ts`): GitHub Pages can't rewrite paths.
+- Pages by the hash (`app/src/router.ts`): GitHub Pages can't rewrite paths. `#/store` is the PUBLIC store
+  (`pages/store/Store.tsx`): its own layout without the owner's menus, it reads Control's public `GET /store`
+  with no session (CORS * doesn't allow an Authorization header), and must never show owner data.

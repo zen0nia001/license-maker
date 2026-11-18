@@ -5,13 +5,18 @@ out of **License Maker** and lives at the same address, https://zen0nia001.githu
 already has License Maker keeps its locked key, payment details and key history.
 
 - **Apps** (home): every app as a card, with what needs you (license requests waiting, installations to look at).
-- **An app's page**: Overview · Installations · Requests · Keys.
+- **An app's page**: Overview · Installations · Requests · Keys · Store listing.
   - *Installations*: every installation that checks in with Control (version, license, backups, disk, alerts);
     name it, accept or ignore it, **Make a key for it**.
   - *Requests*: clients' I've paid / free-trial requests from their app; **send key** signs it here and sends only the
     finished key to Control, which hands it to the app within a minute; or decline with a reason.
   - *Keys*: Make a license (free trial, monthly, yearly or a custom end date) and the keys made on this device
     (Renew, Copy, Delete).
+  - *Store listing*: what clients see on the public store (description, features, prices, icon, colour), with a
+    live preview; **Show it on the public store** publishes it.
+- **Add app**: a new app you sell (name, short name, license prefix); its listing works at once.
+- **The store** (`#/store`): the public page clients open, with no sign-in and none of the owner's menus: every
+  published app, its page, and Message us on Messenger / Send a text (Settings → Your store sets the name and contacts).
 - **Check a key**: is a key genuine, for whom, until when.
 - **Settings**: the signing key (set up from the locked backup code or the key file, unlock, locked backup code,
   remove), the payment details written into every key, and Control (passkeys, notifications, sign out).

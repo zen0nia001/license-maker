@@ -1,14 +1,17 @@
 // Pages by the URL's hash (#/app/spx/keys): GitHub Pages serves one file and can't rewrite paths.
 import { useSyncExternalStore } from 'react';
 
-export const TABS = ['overview', 'installs', 'requests', 'keys'] as const;
+export const TABS = ['overview', 'installs', 'requests', 'keys', 'listing'] as const;
 export type Tab = (typeof TABS)[number];
 
 export type Route =
   | { page: 'home' }
   | { page: 'app'; app: string; tab: Tab; query: URLSearchParams }
   | { page: 'settings' }
-  | { page: 'check' };
+  | { page: 'check' }
+  | { page: 'add' }
+  /** The public store (no sign-in): every published app, or one of them. */
+  | { page: 'store'; app: string | null };
 
 export function parse(hash: string): Route {
   const [path = '', search = ''] = hash.replace(/^#/, '').split('?');
@@ -17,6 +20,8 @@ export function parse(hash: string): Route {
     const tab = (TABS as readonly string[]).includes(parts[2] ?? '') ? (parts[2] as Tab) : 'overview';
     return { page: 'app', app: decodeURIComponent(parts[1]), tab, query: new URLSearchParams(search) };
   }
+  if (parts[0] === 'store') return { page: 'store', app: parts[1] ? decodeURIComponent(parts[1]) : null };
+  if (parts[0] === 'add') return { page: 'add' };
   if (parts[0] === 'settings') return { page: 'settings' };
   if (parts[0] === 'check') return { page: 'check' };
   return { page: 'home' };
@@ -26,6 +31,8 @@ export const href = {
   home: '#/',
   settings: '#/settings',
   check: '#/check',
+  add: '#/add',
+  store: (id?: string) => (id ? `#/store/${encodeURIComponent(id)}` : '#/store'),
   app: (id: string, tab: Tab = 'overview', query?: Record<string, string>) =>
     `#/app/${encodeURIComponent(id)}${tab === 'overview' ? '' : `/${tab}`}${query ? `?${new URLSearchParams(query)}` : ''}`,
 };

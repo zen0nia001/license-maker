@@ -1,6 +1,23 @@
 // Control's owner API, as this app reads it (Control: src/routes/*.ts).
 
-export type Product = { id: string; name: string; licensePrefix: string; imageRepo: string | null };
+/** An app as the public store shows it (Control: src/store/listing.ts publicView). */
+export type Listing = {
+  id: string;
+  name: string;
+  tagline: string | null;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  priceMonthly: string | null;
+  priceYearly: string | null;
+  features: string[];
+};
+
+/** An app as the owner sees it: its listing, and what Control knows of it (ownerView). */
+export type Product = Listing & { licensePrefix: string; imageRepo: string | null; published: boolean; sort: number };
+
+/** The store's own details (Control: storeView). */
+export type StoreDetails = { name: string | null; about: string | null; messenger: string | null; mobile: string | null };
 
 export type Alert = 'silent' | 'license_locked' | 'license_ending' | 'backup_old' | 'disk_low' | 'moved' | 'clone_suspected';
 

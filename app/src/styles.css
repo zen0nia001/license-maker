@@ -137,3 +137,17 @@ details summary { cursor: pointer; font-weight: 600; }
 .cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 @media (min-width: 900px) { .cols.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
 @media (max-width: 560px) { .tabs a { padding: 9px 8px; font-size: .92rem; } }
+
+/* The public store (pages/store/Store.tsx) and the listing preview */
+.app-card.add { border-style: dashed; justify-content: center; }
+.app-card.add .app-icon { background: var(--seal-soft); color: var(--seal); }
+.app-price { margin-top: auto; font-weight: 700; color: var(--seal); }
+.store-app { display: flex; flex-direction: column; gap: 16px; }
+.store-text { white-space: pre-wrap; line-height: 1.6; }
+.store-features { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+.store-prices { display: flex; gap: 10px; flex-wrap: wrap; }
+.store-prices > div { flex: 1 1 140px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; }
+.store-prices b { font-size: 1.2rem; }
+.store-preview { border: 1px dashed var(--line); border-radius: 14px; padding: 16px; }
+a.button { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-weight: 600; border-radius: 10px; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); padding: 11px 16px; }
+a.button.primary { background: var(--seal); border-color: var(--seal); color: var(--seal-ink); }

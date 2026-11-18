@@ -5,11 +5,13 @@ import { href } from '../router';
 import { useControl } from '../state/control';
 import { ControlSignIn } from '../components/ControlSignIn';
 import { Chip, Msg } from '../components/ui';
+import { AppIcon } from '../components/AppIcon';
 
 /** The home screen: what needs you, then every app as a card (tap one for its page). */
 export const Home: React.FC = () => {
   const control = useControl();
   const apps = control.products.map((p) => ({ p, look: lookOf(p), stats: statsOf(p, control.installations, control.requests) }));
+  const published = control.products.filter((p) => p.published).length;
   const waiting = apps.filter((a) => a.stats.waiting.length > 0);
   const attention = apps.filter((a) => a.stats.attention.length > 0);
 
@@ -17,7 +19,10 @@ export const Home: React.FC = () => {
     <>
       <div>
         <h1>Your apps</h1>
-        <p className="muted small">Tap an app for its installations, license requests and keys.</p>
+        <p className="muted small">
+          Tap an app for its installations, license requests, keys and store listing.
+          {control.signedIn && <> Your store shows {published} of them: <a href={href.store()}>open it</a>.</>}
+        </p>
       </div>
 
       {!control.available && (
@@ -46,7 +51,7 @@ export const Home: React.FC = () => {
       <div className="apps">
         {apps.map(({ p, look, stats }) => (
           <a key={p.id} className="app-card" href={href.app(p.id)}>
-            <div className="app-icon" style={{ background: look.color }} aria-hidden="true">{look.icon}</div>
+            <AppIcon app={p} />
             <div>
               <div className="app-name">{p.name}</div>
               {look.tagline && <div className="app-sub">{look.tagline}</div>}
@@ -57,10 +62,17 @@ export const Home: React.FC = () => {
                 {stats.newestVersion && <Chip tone="info">v{stats.newestVersion}</Chip>}
                 {stats.waiting.length > 0 && <Chip tone="warn">{plural(stats.waiting.length, 'request')}</Chip>}
                 {stats.attention.length > 0 && <Chip tone="bad">{plural(stats.attention.length, 'alert')}</Chip>}
+                {!p.published && <Chip tone="info">not on the store</Chip>}
               </div>
             )}
           </a>
         ))}
+        {control.signedIn && (
+          <a className="app-card add" href={href.add}>
+            <div className="app-icon" aria-hidden="true">＋</div>
+            <div><div className="app-name">Add app</div><div className="app-sub">A new app you sell</div></div>
+          </a>
+        )}
       </div>
     </>
   );

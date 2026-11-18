@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/control/api';
 import { addPasskey, passkeyError } from '../lib/control/passkey';
 import { pushState, turnPushOff, turnPushOn, type PushState } from '../lib/control/push';
-import type { Passkey } from '../lib/control/types';
+import type { Passkey, StoreDetails } from '../lib/control/types';
 import { day } from '../lib/format';
+import { href } from '../router';
 import { useControl } from '../state/control';
 import { useSigning } from '../state/signing';
 import { ControlSignIn } from '../components/ControlSignIn';
@@ -20,6 +21,7 @@ export const Settings: React.FC = () => (
       </div>
       <div className="stack" style={{ gap: 16 }}>
         <ControlCard />
+        <StoreCard />
       </div>
     </div>
   </>
@@ -198,6 +200,32 @@ const ControlCard: React.FC = () => {
       </div>
       <p className="small muted">Do this on the device that should get the passkey, while signed in there.</p>
       <Say text={error} />
+    </Card>
+  );
+};
+
+/** The public store's own details: its name, a line about it, and how clients reach you (Messenger, a text). */
+const StoreCard: React.FC = () => {
+  const control = useControl();
+  const [store, setStore] = useState<StoreDetails | null>(null);
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (control.signedIn) api<StoreDetails>('GET', '/owner/store').then(setStore, () => setStore(null));
+  }, [control.signedIn]);
+  if (!control.signedIn || !store) return null;
+  const set = (k: keyof StoreDetails, v: string) => { setStore({ ...store, [k]: v }); setSaved(false); };
+  return (
+    <Card title="Your store" actions={<a href={href.store()} className="small">Open it</a>}>
+      <p className="small muted">The public page clients open: every app you publish (an app's <b>Store listing</b> tab). Give them this address: <span className="mono">{location.origin + location.pathname}#/store</span></p>
+      <Field label="Store name"><input value={store.name ?? ''} maxLength={60} onChange={(e) => set('name', e.target.value)} placeholder="e.g. Apps by Sherwin" /></Field>
+      <Field label="About (one line)"><input value={store.about ?? ''} maxLength={300} onChange={(e) => set('about', e.target.value)} placeholder="Software for small businesses." /></Field>
+      <div className="row">
+        <Field label="Messenger username"><input value={store.messenger ?? ''} onChange={(e) => set('messenger', e.target.value)} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="m.me/juan.delacruz" /></Field>
+        <Field label="Mobile (for texts)"><input value={store.mobile ?? ''} inputMode="tel" onChange={(e) => set('mobile', e.target.value)} autoComplete="off" placeholder="0917 000 0000" /></Field>
+      </div>
+      <p className="small muted">Shown on the store, so clients can message you about an app.</p>
+      {saved && <Msg tone="ok">Saved.</Msg>}
+      <ActionButton className="primary" onClick={async () => { setStore(await api<StoreDetails>('PUT', '/owner/store', store)); setSaved(true); }}>Save store details</ActionButton>
     </Card>
   );
 };

@@ -1,16 +1,15 @@
-// How each app looks on the home grid, and which key format it signs. Store listings (description, icon, price)
-// move into Control in S2; until then the look lives here.
+// How each app looks (from its store listing in Control), and which key format it signs.
 import { PRODUCTS, type ProductCode } from './license/core';
-import type { Installation, LicenseRequest, Product } from './control/types';
+import type { Installation, LicenseRequest, Listing, Product } from './control/types';
 
 type Look = { icon: string; color: string; tagline: string };
 
-const LOOKS: Record<string, Look> = {
-  pos: { icon: '🧾', color: '#2563eb', tagline: 'Point of sale for shops' },
-  spx: { icon: '🛵', color: '#ee4d2d', tagline: 'Records for SPX delivery hubs' },
-};
-
-export const lookOf = (p: Product): Look => LOOKS[p.id] ?? { icon: p.name.slice(0, 1).toUpperCase(), color: '#64748b', tagline: '' };
+/** An app's icon, colour and line, with plain defaults for an app whose listing isn't written yet. */
+export const lookOf = (p: Listing): Look => ({
+  icon: p.icon || p.name.slice(0, 1).toUpperCase(),
+  color: p.color || '#64748b',
+  tagline: p.tagline || '',
+});
 
 /** The key format this app's licenses use, when this app can sign it (POS1 → POS). */
 export const codeOf = (p: Product): ProductCode | null =>

@@ -22,9 +22,13 @@ export type ControlState = {
 };
 
 /** The apps that sign keys here, for when Control isn't connected (or not signed in): the same ids as Control's. */
+const builtIn = (id: string, name: string, licensePrefix: string, icon: string, color: string, tagline: string, sort: number): Product => ({
+  id, name, licensePrefix, icon, color, tagline, sort,
+  imageRepo: null, description: null, priceMonthly: null, priceYearly: null, features: [], published: false,
+});
 export const BUILT_IN_PRODUCTS: Product[] = [
-  { id: 'pos', name: 'POS', licensePrefix: 'POS1', imageRepo: null },
-  { id: 'spx', name: 'SPX Hub', licensePrefix: 'SPX1', imageRepo: null },
+  builtIn('pos', 'POS', 'POS1', '🧾', '#2563eb', 'Point of sale for shops', 1),
+  builtIn('spx', 'SPX Hub', 'SPX1', '🛵', '#ee4d2d', 'Records for SPX delivery hubs', 2),
 ];
 
 const Ctx = createContext<ControlState | null>(null);
