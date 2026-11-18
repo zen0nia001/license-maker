@@ -36,6 +36,12 @@ export const App: React.FC = () => {
   const [mini, setMini] = useState(readMini);
   const [open, setOpen] = useState(false);
 
+  // The owner's pages are "Control Center" (the store and the client pages set their own title).
+  const ownerPage = route.page !== 'store' && route.page !== 'join' && route.page !== 'my';
+  useEffect(() => {
+    if (ownerPage) document.title = 'Control Center';
+  }, [ownerPage]);
+
   // A link was followed: close the phone drawer.
   useEffect(() => {
     const close = () => setOpen(false);

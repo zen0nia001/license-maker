@@ -37,13 +37,14 @@ export const CONTACT_KINDS = [
 export type ContactKind = (typeof CONTACT_KINDS)[number]['value'];
 
 export const Clients: React.FC = () => {
+  const control = useControl();
   const [adding, setAdding] = useState(false);
   return (
     <>
       <PageHead
         eyebrow="Everyone running your apps"
         title="Clients"
-        actions={!adding && <button className="primary" onClick={() => setAdding(true)}><Icon name="plus" size={18} /> Add client</button>}
+        actions={!adding && control.signedIn && <button className="primary" onClick={() => setAdding(true)}><Icon name="plus" size={18} /> Add client</button>}
       />
       <NeedsControl>
         {adding && <AddClient onClose={() => setAdding(false)} />}
