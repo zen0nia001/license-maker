@@ -32,6 +32,10 @@ npm run preview    # the built app (service worker, CSP) on 3060
 - Pages by the hash (`app/src/router.ts`), one static file. `#/store` is the PUBLIC store
   (`pages/store/Store.tsx`): its own layout without the owner's menus, it reads Control's public `GET /store`
   with no session (CORS * doesn't allow an Authorization header), and must never show owner data.
+- **The client's side** (`#/join/…`, `#/my…`, `pages/client/Portal.tsx`): its own layout like the store; only
+  `clientApi` (client session in localStorage `control.clientSession`, never the owner's sessionStorage token), never
+  the signing key or owner data. The owner's client pages are `pages/Clients.tsx` and `pages/ClientPage.tsx`;
+  conversations use `components/Thread.tsx` on both sides.
 - **Design is our own and monochrome** (README "Design"): greys only; colour just for status dots and error text. the shell is `App.tsx` (rail, drawer), tokens and components in
   `app/src/styles.css`, icons drawn in `components/Icon.tsx`. Don't copy another product's look, icons or assets.
   Font: Manrope, Latin file only (`styles.css` @font-face), so the offline cache stays small.

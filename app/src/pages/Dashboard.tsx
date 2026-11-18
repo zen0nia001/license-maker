@@ -7,7 +7,7 @@ import { AppIcon } from '../components/AppIcon';
 import { Icon, type IconName } from '../components/Icon';
 import { Card, Chip, Empty, PageHead } from '../components/ui';
 import { NeedsControl } from './app/AppPage';
-import { clientNameOf, clientsOf } from './Clients';
+import { clientNameOf } from './Clients';
 
 export const Dashboard: React.FC = () => (
   <>
@@ -32,7 +32,7 @@ const Board: React.FC = () => {
 
   const kpis: { label: string; value: number; icon: IconName; tone?: 'bad' | 'warn' | 'ok'; to?: string }[] = [
     { label: 'Apps', value: control.products.length, icon: 'apps', to: href.apps },
-    { label: 'Clients', value: clientsOf(control.installations).length, icon: 'clients', to: href.clients },
+    { label: 'Clients', value: control.clients.length, icon: 'clients', to: href.clients },
     { label: 'Installations', value: installs.length, icon: 'dashboard' },
     { label: 'Licenses ending in 30 days', value: ending.length, icon: 'key', tone: ending.length ? 'warn' : 'ok' },
     { label: 'Locked (no valid license)', value: locked.length, icon: 'locked', tone: locked.length ? 'bad' : 'ok' },

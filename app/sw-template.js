@@ -36,7 +36,7 @@ self.addEventListener('fetch', (e) => {
 
 self.addEventListener('push', (e) => {
   e.waitUntil(self.registration.showNotification('Control Center', {
-    body: 'A client is waiting: a license request or a store inquiry. Open the app.',
+    body: 'A client is waiting: a message, a license request or a store inquiry. Open the app.',
     icon: './icon-192.png',
     badge: './icon-192.png',
     tag: 'control',

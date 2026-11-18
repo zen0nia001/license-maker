@@ -17,6 +17,7 @@ export const Inbox: React.FC = () => (
   <>
     <PageHead eyebrow="From your clients" title="Inbox" />
     <NeedsControl>
+      <Messages />
       <Inquiries />
       <Requests />
     </NeedsControl>
@@ -82,6 +83,32 @@ const InquiryRow: React.FC<{ inquiry: Inquiry }> = ({ inquiry: q }) => {
         </div>
       </div>
     </li>
+  );
+};
+
+/** Clients who wrote to you: the newest conversations first, unread ones on top. */
+const Messages: React.FC = () => {
+  const control = useControl();
+  const talking = control.clients
+    .filter((c) => c.lastMessageAt)
+    .sort((a, b) => (b.unreadMessages > 0 ? 1 : 0) - (a.unreadMessages > 0 ? 1 : 0) || Date.parse(b.lastMessageAt!) - Date.parse(a.lastMessageAt!))
+    .slice(0, 10);
+  if (talking.length === 0) return null;
+  return (
+    <Card title={<>Messages{control.unreadMessages > 0 && <span className="muted" style={{ marginLeft: 6, fontWeight: 600 }}>{control.unreadMessages} new</span>}</>}>
+      <ul className="list">
+        {talking.map((c) => (
+          <li key={c.id}>
+            <div className="who"><a href={href.client(c.id)}>{c.name}</a>{c.business && <span className="muted">, {c.business}</span>}</div>
+            <div className="meta">last message {ago(c.lastMessageAt)}</div>
+            <div className="acts">
+              {c.unreadMessages > 0 && <Chip tone="warn">{c.unreadMessages} new</Chip>}
+              <a className="button small" href={href.client(c.id)}>Open</a>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 };
 

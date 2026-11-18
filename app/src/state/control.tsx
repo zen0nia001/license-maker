@@ -2,7 +2,7 @@
 // for this host (control.config.json) the app still makes keys; Control's parts just say they aren't set up.
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api, CONTROL_URL, currentSession, onSignedOut, session } from '../lib/control/api';
-import type { Inquiry, Installation, LicenseRequest, Product } from '../lib/control/types';
+import type { Client, Inquiry, Installation, LicenseRequest, Product } from '../lib/control/types';
 
 export type ControlState = {
   /** A Control address is set for this host. */
@@ -15,7 +15,11 @@ export type ControlState = {
   requests: LicenseRequest[];
   /** Inquiries from the public store. */
   inquiries: Inquiry[];
-  /** Waiting for the owner: license requests pending + new inquiries (the Inbox count). */
+  /** Client accounts (C1), with their unread messages. */
+  clients: Client[];
+  /** Messages from clients the owner hasn't read yet. */
+  unreadMessages: number;
+  /** Waiting for the owner: license requests pending + new inquiries + unread messages (the Inbox count). */
   inboxCount: number;
   loading: boolean;
   error: string | null;
@@ -49,6 +53,7 @@ export const ControlProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [installations, setInstallations] = useState<Installation[]>([]);
   const [requests, setRequests] = useState<LicenseRequest[]>([]);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,16 +70,18 @@ export const ControlProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     setLoading(true);
     try {
-      const [p, i, r, q] = await Promise.all([
+      const [p, i, r, q, cl] = await Promise.all([
         api<Product[]>('GET', '/owner/products'),
         api<Installation[]>('GET', '/owner/installations'),
         api<LicenseRequest[]>('GET', '/owner/license-requests'),
         api<Inquiry[]>('GET', '/owner/inquiries'),
+        api<Client[]>('GET', '/owner/clients'),
       ]);
       setProducts(p);
       setInstallations(i);
       setRequests(r);
       setInquiries(q);
+      setClients(cl);
       setError(null);
     } catch (e) {
       setError((e as Error).message);
@@ -108,7 +115,11 @@ export const ControlProvider: React.FC<{ children: React.ReactNode }> = ({ child
       installations: signedIn ? installations : [],
       requests: signedIn ? requests : [],
       inquiries: signedIn ? inquiries : [],
-      inboxCount: signedIn ? requests.filter((x) => x.status === 'pending').length + inquiries.filter((x) => x.status === 'new').length : 0,
+      clients: signedIn ? clients : [],
+      unreadMessages: signedIn ? clients.reduce((n, c) => n + c.unreadMessages, 0) : 0,
+      inboxCount: signedIn
+        ? requests.filter((x) => x.status === 'pending').length + inquiries.filter((x) => x.status === 'new').length + clients.reduce((n, c) => n + c.unreadMessages, 0)
+        : 0,
       loading,
       error,
       reload,
@@ -123,7 +134,7 @@ export const ControlProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setSignedIn(false);
       },
     }),
-    [signedIn, hasPasskey, products, installations, requests, inquiries, loading, error, reload],
+    [signedIn, hasPasskey, products, installations, requests, inquiries, clients, loading, error, reload],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 };

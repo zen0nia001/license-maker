@@ -13,6 +13,8 @@ import { Settings } from './pages/Settings';
 import { Check } from './pages/Check';
 import { AddApp } from './pages/AddApp';
 import { StorePage } from './pages/store/Store';
+import { ClientPage } from './pages/ClientPage';
+import { JoinPage, MyPage } from './pages/client/Portal';
 
 type NavItem = { to: string; label: string; icon: IconName; active: (r: Route) => boolean; count?: number; external?: boolean };
 
@@ -42,6 +44,9 @@ export const App: React.FC = () => {
   }, []);
 
   if (route.page === 'store') return <StorePage app={route.app} />;
+  // The client's side (their invite, their area): its own pages, none of the owner's.
+  if (route.page === 'join') return <JoinPage key={route.token} token={route.token} />;
+  if (route.page === 'my') return <MyPage tab={route.tab} />;
 
   const groups: { label?: string; items: NavItem[] }[] = [
     {
@@ -53,7 +58,7 @@ export const App: React.FC = () => {
     {
       label: 'Manage',
       items: [
-        { to: href.clients, label: 'Clients', icon: 'clients', active: (r) => r.page === 'clients' },
+        { to: href.clients, label: 'Clients', icon: 'clients', active: (r) => r.page === 'clients' || r.page === 'client' },
         { to: href.apps, label: 'Apps', icon: 'apps', active: (r) => r.page === 'apps' || r.page === 'app' || r.page === 'add' },
         { to: href.inbox, label: 'Inbox', icon: 'inbox', active: (r) => r.page === 'inbox', count: control.inboxCount },
       ],
@@ -129,6 +134,7 @@ export const App: React.FC = () => {
         {route.page === 'home' && <Home />}
         {route.page === 'dashboard' && <Dashboard />}
         {route.page === 'clients' && <Clients />}
+        {route.page === 'client' && <ClientPage key={route.id} id={route.id} />}
         {route.page === 'apps' && <Apps />}
         {route.page === 'inbox' && <Inbox />}
         {route.page === 'app' && <AppPage key={route.app} app={route.app} tab={route.tab} query={route.query} />}

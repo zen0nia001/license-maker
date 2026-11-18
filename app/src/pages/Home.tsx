@@ -8,7 +8,7 @@ import { AppIcon } from '../components/AppIcon';
 import { Icon } from '../components/Icon';
 import { Card, Empty, Msg, PageHead } from '../components/ui';
 import { ALERT_TEXT, nameOf } from './app/Installs';
-import { clientsOf } from './Clients';
+
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -24,6 +24,14 @@ export const Home: React.FC = () => {
   const installs = control.installations.filter((i) => i.status !== 'ignored');
 
   const needs: Need[] = [
+    ...control.clients.filter((c) => c.unreadMessages > 0).map((c) => ({
+      key: c.id,
+      kind: 'Client · message',
+      tone: 'var(--warn)',
+      title: c.business ? `${c.name}, ${c.business}` : c.name,
+      sub: `${plural(c.unreadMessages, 'new message')} · ${ago(c.lastMessageAt)}`,
+      to: href.client(c.id),
+    })),
     ...control.inquiries.filter((q) => q.status === 'new').map((q) => ({
       key: q.id,
       kind: `${q.product?.name ?? 'Store'} · inquiry`,
@@ -113,7 +121,7 @@ export const Home: React.FC = () => {
           <div className="hero-stats">
             <div><b>{control.products.length}</b><span>apps</span></div>
             {control.signedIn && <div><b>{installs.length}</b><span>installations</span></div>}
-            {control.signedIn && <div><b>{clientsOf(control.installations).length}</b><span>clients</span></div>}
+            {control.signedIn && <div><b>{control.clients.length}</b><span>clients</span></div>}
           </div>
         </div>
       </div>

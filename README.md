@@ -8,7 +8,9 @@ GitHub Pages address forwards there; a phone set up there needs **Settings → S
   with their numbers, and the big picture (apps, installations, clients).
 - **Dashboard**: apps, clients, installations, licenses ending in 30 days, locked installations and requests
   waiting; installations per app, license health (a ring chart), licenses ending soon (Renew), versions running.
-- **Clients**: everyone running your apps (from their installations), searchable, with each license's state.
+- **Clients**: your client accounts (C1–C3): add a client, link their installations (a name match is suggested),
+  send a **one-time invite link** (copy, Messenger, text or email), see their sign-in, turn them off, and talk to
+  them in **Messages** (unread ones in Needs you and Inbox). Installations no client has yet are listed to link.
 - **Apps**: every app as a tile (on the store or not), and **Add app**. **Inbox**: store inquiries (reply on
   Messenger, by text, call or email; mark done; delete) and every app's license requests.
 - **An app's page**: Overview · Installations · Requests · Keys · Store listing.
@@ -24,6 +26,10 @@ GitHub Pages address forwards there; a phone set up there needs **Settings → S
 - **The store** (`#/store`): the public page clients open, with no sign-in and none of the owner's menus: every
   published app, its page, and **Interested in …?**: an inquiry form (name, business, how to reach them, a message)
   that lands in your Inbox, plus Messenger / Text links (Settings → Your store sets the name and contacts).
+- **The client's own page** (`#/join/<invite>` once, then `#/my`, also linked from the store as **Client sign in**):
+  they set up a passkey from your invite, then see their installations (license, backups, problems), **renew or ask**
+  for a license (it reaches your Inbox like Send to my provider), their licenses with the key to copy, and messages
+  with you. Its own page like the store: none of your menus, your session or your signing key.
 - **Check a key**: is a key genuine, for whom, until when.
 - **Settings**: the signing key (set up from the locked backup code or the key file, unlock, locked backup code,
   remove), the payment details written into every key, and Control (passkeys, notifications, sign out).

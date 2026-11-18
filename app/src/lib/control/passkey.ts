@@ -1,7 +1,7 @@
 // Owner sign-in with a passkey on this device (WebAuthn, no library): Control makes the options and checks the
 // answer; the ceremony runs here (Control: src/auth/routes.ts).
 import { b64url, fromB64url } from '../license/core';
-import { api, session, type Session } from './api';
+import { api, clientApi, clientSession, session, type Session } from './api';
 
 type Json = Record<string, unknown>;
 
@@ -64,6 +64,41 @@ export async function signIn(): Promise<void> {
   const cred = (await navigator.credentials.get({ publicKey: requestOptions(options) })) as PublicKeyCredential | null;
   if (!cred) throw new Error('No passkey was used.');
   session.set(await api<Session>('POST', '/owner/auth/login/verify', { challengeToken, response: credentialJSON(cred) }));
+}
+
+// ---------- clients (C1): their own passkeys, from a one-time invite link ----------
+
+export type InviteInfo = { client: { name: string; business: string | null }; expiresAt: string };
+
+/** Who an invite link is for (it writes nothing). */
+export const readInvite = (invite: string) => clientApi<InviteInfo>('POST', '/client/auth/invite', { invite });
+
+type ClientSignedIn = Session & { client: { name: string; business: string | null } };
+
+/** Sets up the client's passkey on this device with their invite, and signs them in. */
+export async function joinWithInvite(invite: string, name: string): Promise<void> {
+  const { options, challengeToken } = await clientApi<{ options: Json; challengeToken: string }>('POST', '/client/auth/register/options', { invite });
+  const cred = (await navigator.credentials.create({ publicKey: creationOptions(options) })) as PublicKeyCredential | null;
+  if (!cred) throw new Error('No passkey was made.');
+  const done = await clientApi<ClientSignedIn>('POST', '/client/auth/register/verify', { invite, challengeToken, name, response: credentialJSON(cred) });
+  clientSession.set({ token: done.token, expiresAt: done.expiresAt, name: done.client.name });
+}
+
+export async function clientSignIn(): Promise<void> {
+  const { options, challengeToken } = await clientApi<{ options: Json; challengeToken: string }>('POST', '/client/auth/login/options', {});
+  const cred = (await navigator.credentials.get({ publicKey: requestOptions(options) })) as PublicKeyCredential | null;
+  if (!cred) throw new Error('No passkey was used.');
+  const done = await clientApi<ClientSignedIn>('POST', '/client/auth/login/verify', { challengeToken, response: credentialJSON(cred) });
+  clientSession.set({ token: done.token, expiresAt: done.expiresAt, name: done.client.name });
+}
+
+export async function clientSignOut(): Promise<void> {
+  try {
+    await clientApi('POST', '/client/auth/logout');
+  } catch {
+    /* signed out here anyway */
+  }
+  clientSession.clear();
 }
 
 /** A cancelled passkey prompt reads "cancelled", anything else as it is. */

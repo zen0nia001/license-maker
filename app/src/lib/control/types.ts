@@ -27,6 +27,8 @@ export type Installation = {
   status: 'new' | 'active' | 'ignored';
   label: string | null;
   customer: string | null;
+  /** The client account it belongs to (C1), if linked. */
+  client: { id: string; name: string } | null;
   installationId: string | null;
   movedFrom: string | null;
   movedAt: string | null;
@@ -72,3 +74,61 @@ export type Inquiry = {
 };
 
 export type Passkey = { id: string; name: string; deviceType: string | null; backedUp: boolean; createdAt: string; lastUsedAt: string | null; current: boolean };
+
+/** A client account (C1; Control: src/routes/clients.ts). */
+export type Client = {
+  id: string;
+  name: string;
+  business: string | null;
+  contactKind: 'messenger' | 'mobile' | 'email' | null;
+  contact: string | null;
+  note: string | null;
+  status: 'active' | 'disabled';
+  createdAt: string;
+  lastSeenAt: string | null;
+  installations: number;
+  passkeys: number;
+  inviteExpiresAt: string | null;
+  unreadMessages: number;
+  lastMessageAt: string | null;
+};
+
+export type ClientDetail = Client & {
+  installationList: { id: string; product: { id: string; name: string }; label: string | null; installationId: string | null; lastSeenAt: string | null; status: string }[];
+  passkeyList: { id: string; name: string; deviceType: string | null; createdAt: string; lastUsedAt: string | null }[];
+};
+
+/** One message between the owner and a client (C2). */
+export type Message = { id: string; from: 'client' | 'owner'; body: string; createdAt: string; readAt: string | null };
+
+/** What a client sees of their own installation (Control: src/clients/routes.ts). */
+export type MyInstallation = {
+  id: string;
+  product: { id: string; name: string };
+  label: string | null;
+  installationId: string | null;
+  lastSeenAt: string | null;
+  version: string | null;
+  license: { state: string; plan: string | null; expiresAt: string | null; daysLeft: number | null } | null;
+  backup: { lastAt: string | null; count: number } | null;
+  disk: { freeBytes: number; totalBytes: number } | null;
+  alerts: Alert[];
+  request: { id: string; status: LicenseRequest['status']; plan: string; createdAt: string } | null;
+};
+
+/** A client's own license request, with their key once approved. */
+export type MyRequest = {
+  id: string;
+  installation: { id: string; label: string | null; installationId: string | null };
+  product: { id: string; name: string };
+  plan: 'trial' | 'monthly' | 'yearly';
+  paymentReference: string | null;
+  status: LicenseRequest['status'];
+  note: string | null;
+  licenseId: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+  deliveredAt: string | null;
+  licenseKey: string | null;
+};

@@ -39,7 +39,10 @@ export const StorePage: React.FC<{ app: string | null }> = ({ app }) => {
   return (
     <>
       <header className="store-top">
-        <a className="store-brand" href={href.store()}><Logo size={30} /> {name}</a>
+        <div className="store-bar">
+          <a className="store-brand" href={href.store()}><Logo size={30} /> {name}</a>
+          <a className="store-signin" href={href.my()}><Icon name="user" size={16} /> Client sign in</a>
+        </div>
         <h1>{app ? one?.name ?? name : name}</h1>
         {!app && data?.store.about && <p>{data.store.about}</p>}
         {app && one?.tagline && <p>{one.tagline}</p>}

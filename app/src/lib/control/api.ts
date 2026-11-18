@@ -44,22 +44,80 @@ export const onSignedOut = (fn: () => void) => {
   return () => void signedOutListeners.delete(fn);
 };
 
-export async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
+/** A client's session (C1): kept on their own phone (localStorage) for its 30 days, apart from the owner's. */
+export type ClientSession = Session & { name: string };
+const CLIENT_SESSION_KEY = 'control.clientSession';
+let clientMemory: ClientSession | null = null;
+const clientListeners = new Set<() => void>();
+
+export const clientSession = {
+  get(): ClientSession | null {
+    try {
+      const s = JSON.parse(localStorage.getItem(CLIENT_SESSION_KEY) || 'null') as ClientSession | null;
+      return s && Date.parse(s.expiresAt) > Date.now() ? s : null;
+    } catch {
+      return clientMemory;
+    }
+  },
+  set(s: ClientSession) {
+    clientMemory = s;
+    try {
+      localStorage.setItem(CLIENT_SESSION_KEY, JSON.stringify(s));
+    } catch {
+      /* this visit only */
+    }
+    clientListeners.forEach((fn) => fn());
+  },
+  clear() {
+    clientMemory = null;
+    try {
+      localStorage.removeItem(CLIENT_SESSION_KEY);
+    } catch {
+      /* nothing kept */
+    }
+    clientListeners.forEach((fn) => fn());
+  },
+};
+clientMemory = clientSession.get();
+export const currentClientSession = () => clientMemory;
+
+/** Told when the client session starts or ends (sign-in, sign-out, or Control said 401). */
+export const onClientSession = (fn: () => void) => {
+  clientListeners.add(fn);
+  return () => void clientListeners.delete(fn);
+};
+
+async function request(method: string, path: string, body: unknown, token: string | undefined): Promise<Response> {
   if (!CONTROL_URL) throw new Error('Control is not set up for this address.');
   const headers: Record<string, string> = {};
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  if (memory) headers.Authorization = `Bearer ${memory.token}`;
-  let res: Response;
+  if (token) headers.Authorization = `Bearer ${token}`;
   try {
-    res = await fetch(CONTROL_URL + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store' });
+    return await fetch(CONTROL_URL + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store' });
   } catch {
     throw new Error("Control can't be reached. Check the internet connection.");
   }
+}
+
+async function answer<T>(res: Response): Promise<T> {
   const json = res.status === 204 ? null : await res.json().catch(() => null);
+  if (!res.ok) throw new Error((json as { error?: { message?: string } } | null)?.error?.message || `Control answered ${res.status}.`);
+  return json as T;
+}
+
+/** A call as the owner (/owner/…), with the owner's session. */
+export async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const res = await request(method, path, body, memory?.token);
   if (res.status === 401 && path.startsWith('/owner/') && !path.startsWith('/owner/auth/')) {
     session.clear();
     signedOutListeners.forEach((fn) => fn());
   }
-  if (!res.ok) throw new Error((json as { error?: { message?: string } } | null)?.error?.message || `Control answered ${res.status}.`);
-  return json as T;
+  return answer<T>(res);
+}
+
+/** A call as the signed-in client (/client/…). Never sends the owner's token. */
+export async function clientApi<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const res = await request(method, path, body, clientMemory?.token);
+  if (res.status === 401 && path.startsWith('/client/') && !path.startsWith('/client/auth/')) clientSession.clear();
+  return answer<T>(res);
 }
