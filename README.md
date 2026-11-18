@@ -42,3 +42,15 @@ license form with that installation's app, Installation ID and customer.
   besides the app's own (`connect-src`). Without an address for this host the card is hidden: today only
   `localhost` (for testing at `http://localhost:3060`). Add the production address to **both** places
   when Control is deployed.
+
+### License requests and notifications
+
+- **License requests** at the top of Installs: a client's I've paid (with the payment reference) or free-trial
+  request, sent from their app. Check the payment, then **Payment received: send key** (or **Approve trial**):
+  this app signs the key here with your unlocked key (`window.issueForControl` in `index.html`: the same rules
+  and payment details as Make a license, recorded under Made on this device; a renewal starts the day after the
+  current key ends) and sends only the finished key to Control, which hands it to the app within a minute.
+  Or **Decline** with a reason the client sees.
+- **Turn on notifications** (bottom of Installs): this device is told when a request comes in. The push carries
+  no content (the service worker shows a fixed notice), so Google or Apple learn nothing. On iPhone it needs the
+  app opened from the Home Screen.

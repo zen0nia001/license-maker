@@ -104,6 +104,7 @@ details summary { cursor: pointer; font-weight: 600; }
 .alert { padding: 1px 8px; border-radius: 6px; font-size: .78rem; font-weight: 600; }
 .alert.bad { background: var(--bad-soft); color: var(--bad); }
 .alert.warn { background: var(--warn-soft); color: var(--warn); }
+.alert.ok { background: var(--ok-soft); color: var(--ok); }
 .issued .detail { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
 </style>
 </head>
@@ -249,7 +250,15 @@ details summary { cursor: pointer; font-weight: 600; }
         <button class="small" id="controlSignOutBtn" style="flex: 0 0 auto">Sign out</button>
       </div>
       <div id="controlMsg"></div>
+      <div id="controlRequests" class="stack" style="margin-top: 0" hidden>
+        <p class="small" style="font-weight: 700">License requests</p>
+        <ul class="issued" id="controlRequestList"></ul>
+      </div>
       <ul class="issued" id="controlList"></ul>
+      <div class="row" style="align-items: center">
+        <p class="small muted" id="controlPushNote" style="flex: 3 1 200px"></p>
+        <button class="small" id="controlPushBtn" style="flex: 0 0 auto" hidden></button>
+      </div>
     </div>
   </section>
 
@@ -680,6 +689,28 @@ $('checkBtn').addEventListener('click', async () => {
   const expired = new Date(p.exp) <= new Date();
   say(out, `Genuine ${r.product} ${PLAN_LABELS[p.plan] ? PLAN_LABELS[p.plan].toLowerCase() + ' ' : ''}license for ${p.cust}, installation ${p.iid}. Works through ${fmtDay(lastDayOf(p.exp))}${expired ? ' (expired)' : ''}. License no. ${p.lid}.`, expired ? 'warn' : 'ok');
 });
+
+/**
+ * For the Installs card (control.js): makes the key a client asked for through Control, with the same rules and
+ * your saved payment details as "Make a license", and records it under "Made on this device". The signing key
+ * stays in this script; control.js only gets the finished key, which it sends to Control (a key is no secret:
+ * it works only on that installation). A renewal starts the day after the current key ends, else today.
+ */
+window.issueForControl = async ({ product: forProduct, installationId, customer, plan: forPlan, currentExpiresAt }) => {
+  if (!privateKey) throw new Error('Unlock the signing key first (above).');
+  const today = storeToday();
+  const afterCurrent = currentExpiresAt ? addDays(lastDayOf(currentExpiresAt), 1) : null;
+  const start = forPlan !== 'trial' && afterCurrent && afterCurrent > today ? afterCurrent : today;
+  const lastDay = planEnd(forPlan, start);
+  const { license, payload } = await makeLicense(privateKey, publicKey, {
+    product: forProduct, installationId, customer, lastDay, plan: forPlan, pay: $('pay').value, messenger: $('msgr').value, mobile: $('tel').value,
+  });
+  const list = store.get(ISSUED_STORE) || [];
+  list.unshift({ product: forProduct, plan: payload.plan || null, customer: payload.cust, iid: payload.iid, lastDay, lid: payload.lid, license, at: payload.iat });
+  store.set(ISSUED_STORE, list.slice(0, 500));
+  renderIssued();
+  return { license, payload, start, lastDay };
+};
 
 // Remove the key
 $('forgetSure').addEventListener('change', (e) => { $('forgetBtn').disabled = !e.target.checked; });

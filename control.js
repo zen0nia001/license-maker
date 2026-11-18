@@ -114,17 +114,125 @@
   const alertText = (a, i) => (a === 'license_ending' && i.license?.daysLeft != null ? `License ends in ${i.license.daysLeft} day${i.license.daysLeft === 1 ? '' : 's'}` : ALERTS[a] || a);
 
   let installs = [];
+  let requests = [];
   let open = null;
 
   async function load() {
     message(el('controlMsg'), '');
     try {
-      installs = await api('GET', '/owner/installations');
+      [installs, requests] = await Promise.all([api('GET', '/owner/installations'), api('GET', '/owner/license-requests')]);
     } catch (e) {
       message(el('controlMsg'), e.message);
     }
+    renderRequests();
     renderList();
+    renderPush();
   }
+
+  // ---------- license requests: approve (sign here, send the key) or decline ----------
+  const PLAN = { trial: 'Free trial', monthly: 'Monthly', yearly: 'Yearly' };
+  const WEEK = 7 * 24 * 3600e3;
+
+  function renderRequests() {
+    const shown = requests.filter((r) => r.status === 'pending' || r.status === 'approved' || Date.now() - Date.parse(r.decidedAt || r.createdAt) < WEEK);
+    el('controlRequests').hidden = shown.length === 0;
+    el('controlRequestList').replaceChildren(...shown.map(requestRow));
+  }
+
+  function requestRow(r) {
+    const name = r.installation.label || r.installation.customer || r.installation.installationId || r.installation.id;
+    const li = node('li', { class: r.status === 'pending' ? '' : 'old' },
+      node('div', { class: 'who' }, node('span', { class: 'tag' }, r.product.name), node('span', { class: 'tag' }, PLAN[r.plan] || r.plan), name),
+      node('div', { class: 'meta' }, [r.paymentReference && `ref ${r.paymentReference}`, `asked ${ago(r.createdAt)}`].filter(Boolean).join(' · ')),
+    );
+    if (r.status === 'approved') li.append(node('div', { class: 'alerts' }, node('span', { class: 'alert warn' }, 'Key sent: the app picks it up within a minute')));
+    if (r.status === 'delivered') li.append(node('div', { class: 'alerts' }, node('span', { class: 'alert ok' }, `Delivered ${ago(r.deliveredAt)}`)));
+    if (r.status === 'declined') li.append(node('div', { class: 'alerts' }, node('span', { class: 'alert bad' }, `Declined${r.note ? `: ${r.note}` : ''}`)));
+    if (r.status !== 'pending') return li;
+
+    const customer = node('input', { value: r.installation.customer || r.installation.label || '', placeholder: 'Customer name (on the key)', maxlength: '80', autocomplete: 'off' });
+    const note = node('input', { placeholder: 'Reason, if you decline (the client sees it)', maxlength: '200', autocomplete: 'off' });
+    const msg = node('div');
+    const approve = node('button', { class: 'primary' }, r.plan === 'trial' ? 'Approve trial & send key' : 'Payment received: send key');
+    approve.addEventListener('click', async () => {
+      message(msg, '');
+      approve.disabled = true;
+      try {
+        const made = await window.issueForControl({
+          product: r.product.id === 'pos' ? 'POS' : 'SPX',
+          installationId: r.installation.installationId || '',
+          customer: customer.value,
+          plan: r.plan,
+          currentExpiresAt: r.currentLicense?.expiresAt || null,
+        });
+        await api('POST', `/owner/license-requests/${encodeURIComponent(r.id)}/approve`, { licenseKey: made.license });
+        await load();
+      } catch (e) {
+        message(msg, e.message);
+        approve.disabled = false;
+      }
+    });
+    const decline = node('button', {}, 'Decline');
+    decline.addEventListener('click', async () => {
+      try {
+        await api('POST', `/owner/license-requests/${encodeURIComponent(r.id)}/decline`, { note: note.value });
+        await load();
+      } catch (e) { message(msg, e.message); }
+    });
+    li.append(node('div', { class: 'detail' },
+      r.plan !== 'trial' && node('p', { class: 'small muted' }, `Check that payment ${r.paymentReference} arrived before you send the key.`),
+      node('div', {}, node('label', {}, 'Licensed to'), customer),
+      approve,
+      node('div', {}, node('label', {}, 'Or decline'), note),
+      decline,
+      msg,
+    ));
+    return li;
+  }
+
+  // ---------- notifications on this device (Web Push, no content) ----------
+  async function pushSubscription() {
+    const reg = await navigator.serviceWorker?.getRegistration();
+    return { reg, sub: reg?.pushManager ? await reg.pushManager.getSubscription() : null };
+  }
+
+  async function renderPush() {
+    const btn = el('controlPushBtn');
+    const note = el('controlPushNote');
+    const { reg, sub } = await pushSubscription().catch(() => ({}));
+    if (!reg?.pushManager || !('Notification' in window)) {
+      btn.hidden = true;
+      note.textContent = /iPhone|iPad/.test(navigator.userAgent) && !navigator.standalone
+        ? 'For notifications on iPhone, open this app from the Home Screen (Share → Add to Home Screen).'
+        : 'Notifications are not available in this browser.';
+      return;
+    }
+    btn.hidden = false;
+    btn.textContent = sub ? 'Turn off' : 'Turn on notifications';
+    note.textContent = sub ? 'This device is told when a client sends a request.' : 'Get told on this device when a client sends a request.';
+  }
+
+  el('controlPushBtn').addEventListener('click', async () => {
+    message(el('controlMsg'), '');
+    try {
+      const { reg, sub } = await pushSubscription();
+      if (sub) {
+        await api('DELETE', '/owner/push/subscriptions', { endpoint: sub.endpoint });
+        await sub.unsubscribe();
+      } else {
+        if ((await Notification.requestPermission()) !== 'granted') throw new Error('Notifications are blocked for this app. Allow them in the browser\'s settings.');
+        const { publicKey } = await api('GET', '/owner/push');
+        const created = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: fromB64u(publicKey) });
+        await api('POST', '/owner/push/subscriptions', created.toJSON());
+      }
+    } catch (e) {
+      message(el('controlMsg'), e.message);
+    }
+    renderPush();
+  });
+
+  // Back on the app (from a notification, or another app): show what changed.
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && memory) load(); });
 
   function render() {
     const signedIn = !!memory;
@@ -138,8 +246,9 @@
     const list = el('controlList');
     list.replaceChildren();
     const needs = installs.filter((i) => i.status !== 'ignored' && (i.alerts.length || i.status === 'new')).length;
+    const asks = requests.filter((r) => r.status === 'pending').length;
     el('controlSummary').textContent = installs.length
-      ? `${installs.length} installation${installs.length === 1 ? '' : 's'}${needs ? ` · ${needs} to look at` : ' · all fine'}`
+      ? `${installs.length} installation${installs.length === 1 ? '' : 's'}${asks ? ` · ${asks} request${asks === 1 ? '' : 's'} waiting` : ''}${needs ? ` · ${needs} to look at` : asks ? '' : ' · all fine'}`
       : 'No installation has checked in yet.';
     for (const i of installs) list.append(row(i));
   }
