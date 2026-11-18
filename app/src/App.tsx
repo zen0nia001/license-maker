@@ -43,7 +43,6 @@ export const App: React.FC = () => {
 
   if (route.page === 'store') return <StorePage app={route.app} />;
 
-  const waiting = control.requests.filter((r) => r.status === 'pending').length;
   const groups: { label?: string; items: NavItem[] }[] = [
     {
       items: [
@@ -56,7 +55,7 @@ export const App: React.FC = () => {
       items: [
         { to: href.clients, label: 'Clients', icon: 'clients', active: (r) => r.page === 'clients' },
         { to: href.apps, label: 'Apps', icon: 'apps', active: (r) => r.page === 'apps' || r.page === 'app' || r.page === 'add' },
-        { to: href.inbox, label: 'Inbox', icon: 'inbox', active: (r) => r.page === 'inbox', count: waiting },
+        { to: href.inbox, label: 'Inbox', icon: 'inbox', active: (r) => r.page === 'inbox', count: control.inboxCount },
       ],
     },
     {

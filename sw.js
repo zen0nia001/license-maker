@@ -4,15 +4,15 @@
 // a new deploy is a new version, which replaces the old files. Nothing else goes through here: the app's only
 // other requests are to Control, which this never stores.
 //
-// Notifications: Control sends an empty push when a client asks for a license; this shows a fixed notice (the push
-// carries no content, so the push service learns nothing) and opens the app on a tap.
-const CACHE = 'control-center-df6cca4d11d6';
+// Notifications: Control sends an empty push when a client asks for a license or sends a store inquiry; this shows
+// a fixed notice (the push carries no content, so the push service learns nothing) and opens the app on a tap.
+const CACHE = 'control-center-3ea5aeabd0ff';
 const FILES = [
   "./",
   "./index.html",
   "./assets/manrope-latin-wght-normal-DHIcAJRg.woff2",
-  "./assets/index--8qlWY3T.css",
-  "./assets/index-Bkrw-yv-.js",
+  "./assets/index-DlT6Bdjo.css",
+  "./assets/index-bvTGicc_.js",
   "./apple-touch-icon.png",
   "./icon-192.png",
   "./icon-512.png",
@@ -46,7 +46,7 @@ self.addEventListener('fetch', (e) => {
 
 self.addEventListener('push', (e) => {
   e.waitUntil(self.registration.showNotification('Control Center', {
-    body: 'A client is waiting for a license. Open the app.',
+    body: 'A client is waiting: a license request or a store inquiry. Open the app.',
     icon: './icon-192.png',
     badge: './icon-192.png',
     tag: 'control',

@@ -9,7 +9,8 @@ already has License Maker keeps its locked key, payment details and key history.
 - **Dashboard**: apps, clients, installations, licenses ending in 30 days, locked installations and requests
   waiting; installations per app, license health (a ring chart), licenses ending soon (Renew), versions running.
 - **Clients**: everyone running your apps (from their installations), searchable, with each license's state.
-- **Apps**: every app as a tile (on the store or not), and **Add app**. **Inbox**: every app's license requests.
+- **Apps**: every app as a tile (on the store or not), and **Add app**. **Inbox**: store inquiries (reply on
+  Messenger, by text, call or email; mark done; delete) and every app's license requests.
 - **An app's page**: Overview · Installations · Requests · Keys · Store listing.
   - *Installations*: every installation that checks in with Control (version, license, backups, disk, alerts);
     name it, accept or ignore it, **Make a key for it**.
@@ -21,7 +22,8 @@ already has License Maker keeps its locked key, payment details and key history.
     live preview; **Show it on the public store** publishes it.
 - **Add app**: a new app you sell (name, short name, license prefix); its listing works at once.
 - **The store** (`#/store`): the public page clients open, with no sign-in and none of the owner's menus: every
-  published app, its page, and Message us on Messenger / Send a text (Settings → Your store sets the name and contacts).
+  published app, its page, and **Interested in …?**: an inquiry form (name, business, how to reach them, a message)
+  that lands in your Inbox, plus Messenger / Text links (Settings → Your store sets the name and contacts).
 - **Check a key**: is a key genuine, for whom, until when.
 - **Settings**: the signing key (set up from the locked backup code or the key file, unlock, locked backup code,
   remove), the payment details written into every key, and Control (passkeys, notifications, sign out).

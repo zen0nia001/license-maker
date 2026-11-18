@@ -57,4 +57,18 @@ export type LicenseRequest = {
   currentLicense: { state: string; plan: string | null; expiresAt: string | null } | null;
 };
 
+/** "I'm interested", from the public store (Control: src/routes/inquiries.ts). */
+export type Inquiry = {
+  id: string;
+  product: { id: string; name: string } | null;
+  name: string;
+  business: string | null;
+  contactKind: 'messenger' | 'mobile' | 'email';
+  contact: string;
+  message: string | null;
+  status: 'new' | 'done';
+  createdAt: string;
+  handledAt: string | null;
+};
+
 export type Passkey = { id: string; name: string; deviceType: string | null; backedUp: boolean; createdAt: string; lastUsedAt: string | null; current: boolean };

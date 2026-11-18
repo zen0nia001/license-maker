@@ -24,6 +24,14 @@ export const Home: React.FC = () => {
   const installs = control.installations.filter((i) => i.status !== 'ignored');
 
   const needs: Need[] = [
+    ...control.inquiries.filter((q) => q.status === 'new').map((q) => ({
+      key: q.id,
+      kind: `${q.product?.name ?? 'Store'} · inquiry`,
+      tone: 'var(--ok)',
+      title: q.business ? `${q.name}, ${q.business}` : q.name,
+      sub: q.message ? (q.message.length > 70 ? `${q.message.slice(0, 70)}…` : q.message) : `Wants to hear about ${q.product?.name ?? 'your apps'}`,
+      to: href.inbox,
+    })),
     ...control.requests.filter((r) => r.status === 'pending').map((r) => ({
       key: r.id,
       kind: `${r.product.name} · license request`,

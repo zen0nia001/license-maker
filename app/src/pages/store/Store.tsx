@@ -5,6 +5,7 @@ import { href } from '../../router';
 import { AppIcon } from '../../components/AppIcon';
 import { Msg } from '../../components/ui';
 import { Icon, Logo } from '../../components/Icon';
+import { InquiryForm } from './InquiryForm';
 
 type StoreData = { store: StoreDetails; apps: Listing[] };
 
@@ -103,15 +104,22 @@ export const StoreAppDetail: React.FC<{ app: Listing; store: StoreDetails | null
           {app.priceYearly && <div><span className="small muted">Yearly</span><b>{app.priceYearly}</b></div>}
         </div>
       )}
-      {store && (store.messenger || store.mobile) && (
-        <div className="row">
-          {store.messenger && (
-            <a className="button primary" href={`https://m.me/${encodeURIComponent(store.messenger)}?text=${encodeURIComponent(ask)}`} target="_blank" rel="noopener noreferrer">Message us on Messenger</a>
+      <p className="small muted">Every app starts with a free trial: install it, then tap Ask my provider for a free trial on its license screen.</p>
+      {/* On the public store only (not in the owner's listing preview). */}
+      {store && (
+        <div className="inquiry">
+          <InquiryForm product={app.id} appName={app.name} />
+          {(store.messenger || store.mobile) && (
+            <div className="row" style={{ alignItems: 'center' }}>
+              <span className="small muted" style={{ flex: '0 0 auto' }}>Or reach us directly:</span>
+              {store.messenger && (
+                <a className="button" href={`https://m.me/${encodeURIComponent(store.messenger)}?text=${encodeURIComponent(ask)}`} target="_blank" rel="noopener noreferrer">Messenger</a>
+              )}
+              {store.mobile && <a className="button" href={`sms:${store.mobile}?&body=${encodeURIComponent(ask)}`}>Text</a>}
+            </div>
           )}
-          {store.mobile && <a className="button" href={`sms:${store.mobile}?&body=${encodeURIComponent(ask)}`}>Send a text</a>}
         </div>
       )}
-      <p className="small muted">Every app starts with a free trial: install it, then tap Ask my provider for a free trial on its license screen.</p>
     </article>
   );
 };

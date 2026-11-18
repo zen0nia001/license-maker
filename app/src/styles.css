@@ -288,3 +288,11 @@ a.tile:hover { border-color: var(--ink); }
 .store-preview { border: 1px dashed var(--line-2); border-radius: var(--radius); padding: 18px; background: var(--surface); }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* The store's inquiry form ("I'm interested") */
+.inquiry { display: flex; flex-direction: column; gap: 16px; padding-top: 18px; border-top: 1px solid var(--line); }
+.inquiry .row > a.button { flex: 0 0 auto; }
+.inquiry-done { display: flex; gap: 14px; align-items: flex-start; padding: 16px; border-radius: 12px; background: var(--surface-2); }
+.inquiry-done svg { color: var(--ok); }
+/* The field only bots fill in: off screen, never focusable by a person. */
+.hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
