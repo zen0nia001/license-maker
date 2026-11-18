@@ -1,8 +1,8 @@
 # Control Center
 
 The owner's home for every app (POS, SPX Hub and the ones to come), and where license keys are signed. It grew
-out of **License Maker** and lives at the same address, https://zen0nia001.github.io/license-maker/, so a phone that
-already has License Maker keeps its locked key, payment details and key history.
+out of **License Maker**. It lives on Cloudflare at https://control-center.smcontrolcenter.workers.dev/ (the old
+GitHub Pages address forwards there; a phone set up there needs **Settings → Set up** once more on the new address).
 
 - **Home**: what **needs you** (license requests, new or troubled installations) as swipeable cards, **your apps**
   with their numbers, and the big picture (apps, installations, clients).
@@ -28,7 +28,7 @@ already has License Maker keeps its locked key, payment details and key history.
 - **Settings**: the signing key (set up from the locked backup code or the key file, unlock, locked backup code,
   remove), the payment details written into every key, and Control (passkeys, notifications, sign out).
 
-Without Control (an address with no Control set up, like GitHub Pages until Control is deployed) the apps,
+Without Control (an address with no Control set up in `app/control.config.json`) the apps,
 Keys, Check and Settings work as License Maker did; installations and requests say Control isn't connected.
 
 ## Design
@@ -56,24 +56,27 @@ background, and never sent anywhere. Only finished keys go to Control (a key wor
 
 ## Install on a phone
 
-1. Open https://zen0nia001.github.io/license-maker/ in **Safari** (iPhone) or **Chrome** (Android).
+1. Open https://control-center.smcontrolcenter.workers.dev/ in **Safari** (iPhone) or **Chrome** (Android).
 2. iPhone: **Share → Add to Home Screen**. Android: **⋮ → Add to Home screen / Install app**.
 3. Open it from the home screen; **Settings → Set up** with your **locked backup code** and its password.
 
 ## Develop
 
-Source in `app/` (React 18 + Vite + TypeScript); the build goes into the **repo root**, which GitHub Pages serves.
+Source in `app/` (React 18 + Vite + TypeScript); the build goes into `dist/`, which `npm run deploy` publishes to
+Cloudflare (`wrangler.jsonc`: a Worker with static files only, free and separate from Control).
 
 ```bash
 npm install
 npm run dev        # http://localhost:3060 (Control's passkeys are made for this origin locally)
-npm test           # the license core against the deployed main:index.html (keys and locked keys interchangeable)
+npm test           # the license core against the last single-file License Maker, fd5c5c2 (keys interchangeable)
 npm run typecheck
-npm run build      # into the repo root: index.html, assets/, sw.js, manifest, icons. Commit them.
+npm run build      # into dist/ (git-ignored)
+npm run deploy     # test, build and publish to Cloudflare (once: npx wrangler login)
 npm run preview    # the BUILT app on 3060: service worker, notifications and the CSP as deployed
 ```
 
-Rules: build and commit the root files with every change (the live app is whatever the root holds); never rename
+Rules: the live app is what `npm run deploy` last published (the repo root only holds the GitHub Pages "moved"
+page); never rename
 the `licenseMaker.*` storage names (`app/src/lib/storage.ts`); keep `app/src/lib/license/core.ts` interchangeable
 with the deployed format (`npm test`). `npm audit` reports picomatch in Vite's dev tooling only (no fixed release
 yet); nothing of it is in the built app.

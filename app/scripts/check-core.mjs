@@ -10,10 +10,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const now = await import(pathToFileURL(join(repo, 'app', 'src', 'lib', 'license', 'core.ts')).href);
 
-// The old CORE, exactly as deployed (main:index.html between CORE-START and CORE-END).
-const oldHtml = execSync('git show main:index.html', { cwd: repo, encoding: 'utf8' });
+// The old CORE, exactly as deployed to phones before Control Center: the last single-file License Maker
+// (fd5c5c2:index.html, between CORE-START and CORE-END). Keys made then must keep working, so it never changes.
+const oldHtml = execSync('git show fd5c5c2:index.html', { cwd: repo, encoding: 'utf8' });
 const oldCore = oldHtml.slice(oldHtml.indexOf('// CORE-START'), oldHtml.indexOf('// CORE-END'));
-if (!oldCore) throw new Error('No CORE section in main:index.html');
+if (!oldCore) throw new Error('No CORE section in fd5c5c2:index.html');
 const old = new Function(`${oldCore}
   return { importPrivateKey, verifyLicense, makeLicense, sealText, openText, backupCodeOf, boxOfBackupCode };`)();
 

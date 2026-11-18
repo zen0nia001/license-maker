@@ -3,13 +3,14 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
-  "description": "Control Center: the owner's home for every app (and License Maker's key signing). Source in app/, built into the repo root for GitHub Pages.",
+  "description": "Control Center: the owner's home for every app (and License Maker's key signing). Source in app/, built into dist/ and published to Cloudflare (npm run deploy).",
   "scripts": {
     "dev": "vite --config app/vite.config.ts",
-    "build": "node app/scripts/clean.mjs && tsc -p app/tsconfig.json --noEmit && vite build --config app/vite.config.ts",
+    "build": "tsc -p app/tsconfig.json --noEmit && vite build --config app/vite.config.ts",
     "preview": "vite preview --config app/vite.config.ts",
     "typecheck": "tsc -p app/tsconfig.json --noEmit",
-    "test": "node app/scripts/check-core.mjs"
+    "test": "node app/scripts/check-core.mjs",
+    "deploy": "npm test && npm run build && wrangler deploy"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "5.3.0",
@@ -22,6 +23,7 @@
     "@types/react-dom": "18.3.7",
     "@vitejs/plugin-react": "4.7.0",
     "typescript": "5.6.3",
-    "vite": "6.4.5"
+    "vite": "6.4.5",
+    "wrangler": "4.157.0"
   }
 }

@@ -1,5 +1,5 @@
-// This device's saved data. The NAMES are License Maker's (licenseMaker.*): GitHub Pages serves this app from the
-// same address, so a phone that already has its locked key, payment details and key history keeps them.
+// This device's saved data. The NAMES are License Maker's (licenseMaker.*) and never change, so a phone keeps its
+// locked key, payment details and key history across versions (saved data belongs to the app's address).
 import type { LockedBox, Plan, ProductCode } from './license/core';
 
 export const KEYS = {

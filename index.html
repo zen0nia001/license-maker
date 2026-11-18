@@ -1,24 +1,34 @@
 <!doctype html>
+<!-- The old GitHub Pages address. Control Center moved to Cloudflare (npm run deploy publishes dist/ there);
+     this page only sends people on. Hand-written, not built. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://localhost:5070 https://control.smcontrolcenter.workers.dev; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Control Center</title>
-<meta name="description" content="Your apps in one place: installations, license requests and keys, signed on this device.">
-<meta name="theme-color" content="#7a1f2b">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Control">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="referrer" content="no-referrer">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <script type="module" crossorigin src="./assets/index-Dczv2WsA.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-DlT6Bdjo.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-VUVHCjsu6MZGDitKGvT33lYhCJnhYzLwKv8P86Jjy98='; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta http-equiv="refresh" content="3; url=https://control-center.smcontrolcenter.workers.dev/">
+<title>Control Center has moved</title>
+<style>
+:root{color-scheme:light dark;--bg:#fafafa;--fg:#111;--muted:#666}
+@media (prefers-color-scheme:dark){:root{--bg:#0e0e0e;--fg:#f2f2f2;--muted:#9a9a9a}}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:420px;padding:32px 24px}
+h1{font-size:22px;margin:0 0 6px}
+p{margin:0 0 20px;color:var(--muted)}
+a{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--fg);color:var(--bg);text-decoration:none;font-weight:600}
+</style>
 </head>
 <body>
-<div id="root"></div>
+<main>
+<h1>Control Center has moved</h1>
+<p>It's now at control-center.smcontrolcenter.workers.dev. Taking you there…</p>
+<a id="go" href="https://control-center.smcontrolcenter.workers.dev/">Open Control Center</a>
+</main>
+<script>
+// Keep the store link working: #/store here → #/store there.
+document.getElementById('go').href = 'https://control-center.smcontrolcenter.workers.dev/' + location.hash;
+setTimeout(function () { location.replace(document.getElementById('go').href); }, 1500);
+</script>
 </body>
 </html>

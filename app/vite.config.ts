@@ -5,9 +5,8 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 import config from './control.config.json';
 
-// The built app goes into the REPO ROOT (outDir '..'): GitHub Pages serves this repo's root, so the live app
-// always stays a working build, with no Pages setting to change. scripts/clean.mjs removes the previous build
-// first (vite can't empty a folder that also holds the source).
+// The built app goes into dist/ (git-ignored), which `npm run deploy` publishes to Cloudflare (wrangler.jsonc:
+// a Worker with static files only, https://control-center.smcontrolcenter.workers.dev).
 
 /** The Content-Security-Policy, only in the build (the dev server needs inline scripts for hot reload). Nothing
  *  loads from anywhere else; the one other address the app may call is Control (control.config.json). */
@@ -37,7 +36,8 @@ const serviceWorker = (): Plugin => ({
   name: 'service-worker',
   apply: 'build',
   generateBundle(_options, bundle) {
-    const publicFiles = readdirSync(join(__dirname, 'public'));
+    // _headers is Cloudflare's header rules, not a file it serves: never in the offline list.
+    const publicFiles = readdirSync(join(__dirname, 'public')).filter((f) => f !== '_headers');
     const files = ['./', './index.html', ...Object.keys(bundle).filter((f) => f !== 'index.html').map((f) => `./${f}`), ...publicFiles.map((f) => `./${f}`)];
     const version = createHash('sha256').update(files.join('\n')).digest('hex').slice(0, 12);
     const template = readFileSync(join(__dirname, 'sw-template.js'), 'utf8');
@@ -60,8 +60,8 @@ export default defineConfig({
   // npm run preview: the BUILT app (service worker, notifications, the CSP) on the same origin.
   preview: { port: 3060, strictPort: true },
   build: {
-    outDir: '..',
-    emptyOutDir: false,
+    outDir: '../dist',
+    emptyOutDir: true,
     assetsDir: 'assets',
     target: 'es2022',
   },

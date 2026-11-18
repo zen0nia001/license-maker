@@ -2,6 +2,6 @@
   "//": "Where the Control service is, by the host this app is served from. The ONLY other address the app may call: vite.config.ts writes these into the Content-Security-Policy (connect-src). A host with no entry runs without Control (key making only).",
   "controlUrls": {
     "localhost": "http://localhost:5070",
-    "zen0nia001.github.io": "https://control.smcontrolcenter.workers.dev"
+    "control-center.smcontrolcenter.workers.dev": "https://control.smcontrolcenter.workers.dev"
   }
 }

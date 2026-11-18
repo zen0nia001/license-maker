@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Control Center on Cloudflare: a Worker with static files only (no code runs here), separate from Control
+  // (C:\Dev\Control), which keeps the data. Free plan: requests for static files are free and unlimited.
+  // Publish: npm run deploy (tests, builds into dist/, uploads). Address: https://control-center.smcontrolcenter.workers.dev
+  "name": "control-center",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "./dist" },
+  "workers_dev": true,
+  "preview_urls": false
+}

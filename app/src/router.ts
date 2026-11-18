@@ -1,4 +1,4 @@
-// Pages by the URL's hash (#/app/spx/keys): GitHub Pages serves one file and can't rewrite paths.
+// Pages by the URL's hash (#/app/spx/keys): one static file, no path rewriting needed.
 import { useSyncExternalStore } from 'react';
 
 export const TABS = ['overview', 'installs', 'requests', 'keys', 'listing'] as const;
