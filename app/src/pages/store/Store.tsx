@@ -6,6 +6,7 @@ import { AppIcon } from '../../components/AppIcon';
 import { Msg } from '../../components/ui';
 import { Icon, Logo } from '../../components/Icon';
 import { InquiryForm } from './InquiryForm';
+import { isAmount, peso } from '../../lib/price';
 
 type StoreData = { store: StoreDetails; apps: Listing[] };
 
@@ -63,7 +64,7 @@ export const StorePage: React.FC<{ app: string | null }> = ({ app }) => {
                       <div className="app-name">{a.name}</div>
                       {a.tagline && <div className="app-sub">{a.tagline}</div>}
                     </div>
-                    {(a.priceMonthly || a.priceYearly) && <div className="app-price">{a.priceMonthly || a.priceYearly}</div>}
+                    <AppPrice app={a} />
                   </a>
                 ))}
               </div>
@@ -101,12 +102,11 @@ export const StoreAppDetail: React.FC<{ app: Listing; store: StoreDetails | null
           {app.features.map((f) => <li key={f}><Icon name="check" size={18} />{f}</li>)}
         </ul>
       )}
-      {(app.priceMonthly || app.priceYearly) && (
-        <div className="store-prices">
-          {app.priceMonthly && <div><span className="small muted">Monthly</span><b>{app.priceMonthly}</b></div>}
-          {app.priceYearly && <div><span className="small muted">Yearly</span><b>{app.priceYearly}</b></div>}
-        </div>
-      )}
+      <div className="store-prices">
+        <div className="trial-box"><span className="small muted">Free trial</span><b>Try it first</b><span className="small muted">Free, before you pay</span></div>
+        {app.priceMonthly && <div><span className="small muted">Monthly</span><b>{peso(app.priceMonthly)}{isAmount(app.priceMonthly) && <small> / month</small>}</b></div>}
+        {app.priceYearly && <div><span className="small muted">Yearly</span><b>{peso(app.priceYearly)}{isAmount(app.priceYearly) && <small> / year</small>}</b></div>}
+      </div>
       <p className="small muted">Every app starts with a free trial: install it, then tap Ask my provider for a free trial on its license screen.</p>
       {/* On the public store only (not in the owner's listing preview). */}
       {store && (
@@ -124,5 +124,26 @@ export const StoreAppDetail: React.FC<{ app: Listing; store: StoreDetails | null
         </div>
       )}
     </article>
+  );
+};
+
+/** A store card's foot: the monthly price (or the yearly), the yearly under it, and the Free trial label. */
+const AppPrice: React.FC<{ app: Listing }> = ({ app }) => {
+  const main = app.priceMonthly ? { raw: app.priceMonthly, per: 'month' } : app.priceYearly ? { raw: app.priceYearly, per: 'year' } : null;
+  return (
+    <div className="app-foot">
+      <div>
+        {main && (
+          <div className="app-price">
+            {peso(main.raw)}
+            {isAmount(main.raw) && <span className="per"> / {main.per}</span>}
+          </div>
+        )}
+        {app.priceMonthly && app.priceYearly && (
+          <div className="app-sub">or {peso(app.priceYearly)}{isAmount(app.priceYearly) ? ' / year' : ''}</div>
+        )}
+      </div>
+      <span className="trial">Free trial</span>
+    </div>
   );
 };

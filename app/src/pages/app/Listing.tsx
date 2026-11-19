@@ -61,8 +61,8 @@ export const Listing: React.FC<TabProps> = ({ product }) => {
           <textarea value={draft.features} onChange={(e) => set('features', e.target.value)} style={{ fontFamily: 'var(--sans)', fontSize: 15 }} placeholder={'Receipts and cash drawer\nInventory with low-stock alerts'} />
         </Field>
         <div className="row">
-          <Field label="Monthly price"><input value={draft.priceMonthly} maxLength={40} onChange={(e) => set('priceMonthly', e.target.value)} placeholder="₱499 / month" /></Field>
-          <Field label="Yearly price"><input value={draft.priceYearly} maxLength={40} onChange={(e) => set('priceYearly', e.target.value)} placeholder="₱4,990 / year" /></Field>
+          <Field label="Monthly price (₱)" hint="Type the amount: clients see ₱499 / month."><input value={draft.priceMonthly} maxLength={40} onChange={(e) => set('priceMonthly', e.target.value)} placeholder="e.g. 499" inputMode="decimal" /></Field>
+          <Field label="Yearly price (₱)" hint="Type the amount: clients see ₱4,990 / year."><input value={draft.priceYearly} maxLength={40} onChange={(e) => set('priceYearly', e.target.value)} placeholder="e.g. 4990" inputMode="decimal" /></Field>
         </div>
         <label className="row" style={{ alignItems: 'center', fontWeight: 600 }}>
           <input type="checkbox" checked={draft.published} onChange={(e) => set('published', e.target.checked)} style={{ width: 'auto', flex: 'none' }} />

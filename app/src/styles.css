@@ -201,7 +201,11 @@ details summary { cursor: pointer; font-weight: 650; }
 .app-sub { font-size: .84rem; color: var(--muted); }
 .app-stats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
 .app-card.add { border-style: dashed; justify-content: center; align-items: flex-start; }
-.app-price { margin-top: auto; font-weight: 700; }
+.app-price { font-weight: 750; font-size: 1.05rem; letter-spacing: -.01em; }
+.app-price .per, .store-prices small { font-size: .8em; font-weight: 600; color: var(--muted); }
+.app-foot { margin-top: auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+.trial { flex: none; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line-2); font-size: .74rem; font-weight: 700; letter-spacing: .02em; color: var(--ink-2); background: var(--surface-2); }
+.store-prices .trial-box { border-style: dashed; }
 .app-row { display: flex; align-items: center; gap: 14px; padding: 12px 10px; border-radius: 12px; color: inherit; text-decoration: none !important; transition: background .12s; }
 .app-row:hover { background: var(--soft); }
 .app-row .grow { flex: 1; min-width: 0; }
