@@ -1,29 +1,191 @@
-import React, { useState } from 'react';
+// The Inbox: one list of everything clients sent, focused on what waits for you. Filters on top (To do first);
+// each row says who, what and when, and opens in place to act on it: reply to a message, answer an inquiry,
+// approve a license request.
+import React, { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/control/api';
-import type { Client, Inquiry } from '../lib/control/types';
+import type { Client, Inquiry, LicenseRequest, Message } from '../lib/control/types';
+import { PLAN_LABELS } from '../lib/license/core';
 import { ago } from '../lib/format';
 import { go, href } from '../router';
 import { useControl } from '../state/control';
-import { useSigning } from '../state/signing';
 import { Icon } from '../components/Icon';
-import { ActionButton, Card, Chip, Empty, Msg, PageHead, Tag } from '../components/ui';
-import { NeedsControl } from './app/AppPage';
+import { Thread } from '../components/Thread';
 import { SendInstaller } from '../components/SendInstaller';
-import { RequestRow } from './app/Requests';
+import { ActionButton, Empty, PageHead } from '../components/ui';
+import { NeedsControl } from './app/AppPage';
+import { RequestDetail, requestName } from './app/Requests';
 
 const WEEK = 7 * 24 * 3600e3;
 
-/** Everything clients sent you: inquiries from the store, and license requests from every app. */
+type Kind = 'message' | 'inquiry' | 'request';
+type Item = {
+  key: string;
+  kind: Kind;
+  /** Waits for you (an unread message, a new inquiry, a request to approve). */
+  todo: boolean;
+  at: string;
+  label: string;
+  title: string;
+  sub: string;
+  open: () => React.ReactNode;
+};
+
+const FILTERS = [
+  { id: 'todo', label: 'To do' },
+  { id: 'message', label: 'Messages' },
+  { id: 'inquiry', label: 'Inquiries' },
+  { id: 'request', label: 'Requests' },
+  { id: 'done', label: 'Done' },
+] as const;
+type Filter = (typeof FILTERS)[number]['id'];
+
 export const Inbox: React.FC = () => (
-  <>
-    <PageHead eyebrow="From your clients" title="Inbox" />
-    <NeedsControl>
-      <Messages />
-      <Inquiries />
-      <Requests />
-    </NeedsControl>
-  </>
+  <NeedsControl>
+    <InboxView />
+  </NeedsControl>
 );
+
+const InboxView: React.FC = () => {
+  const control = useControl();
+  const [filter, setFilter] = useState<Filter>('todo');
+  const [openKey, setOpenKey] = useState<string | null>(null);
+
+  const items: Item[] = [
+    ...control.clients
+      .filter((c) => c.lastMessageAt)
+      .map((c) => ({
+        key: `m:${c.id}`,
+        kind: 'message' as const,
+        todo: c.unreadMessages > 0,
+        at: c.lastMessageAt!,
+        label: 'Message',
+        title: c.business ? `${c.name}, ${c.business}` : c.name,
+        sub: c.unreadMessages > 0 ? `${c.unreadMessages} new message${c.unreadMessages === 1 ? '' : 's'}` : 'Conversation',
+        open: () => <MessageDetail client={c} />,
+      })),
+    ...control.inquiries.map((q) => ({
+      key: `i:${q.id}`,
+      kind: 'inquiry' as const,
+      todo: q.status === 'new',
+      at: q.createdAt,
+      label: `Inquiry · ${q.product?.name ?? 'Store'}`,
+      title: q.business ? `${q.name}, ${q.business}` : q.name,
+      sub: q.message ? oneLine(q.message) : `Wants to hear about ${q.product?.name ?? 'your apps'}`,
+      open: () => <InquiryDetail inquiry={q} />,
+    })),
+    ...control.requests
+      .filter((r) => r.status === 'pending' || r.status === 'approved' || Date.now() - Date.parse(r.decidedAt || r.createdAt) < WEEK)
+      .map((r) => ({
+        key: `r:${r.id}`,
+        kind: 'request' as const,
+        todo: r.status === 'pending',
+        at: r.createdAt,
+        label: `Request · ${r.product.name}`,
+        title: requestName(r),
+        sub: requestSub(r),
+        open: () => <RequestDetail request={r} />,
+      })),
+  ];
+  // The row you opened stays where it is until you close it, even once it's done (reading a message marks it read).
+  const inPlace = (i: Item) => i.todo || i.key === openKey;
+  items.sort((a, b) => Number(inPlace(b)) - Number(inPlace(a)) || Date.parse(b.at) - Date.parse(a.at));
+
+  const shown = items.filter((i) => (filter === 'todo' ? inPlace(i) : filter === 'done' ? !i.todo || i.key === openKey : i.kind === filter));
+  const count = (f: Filter) => items.filter((i) => (f === 'todo' ? i.todo : f === 'done' ? false : i.kind === f && i.todo)).length;
+  const waiting = count('todo');
+
+  return (
+    <>
+      <PageHead
+        eyebrow={waiting ? `${waiting} waiting for you` : 'All caught up'}
+        title="Inbox"
+        actions={<button className="small" onClick={() => void control.reload()}>Refresh</button>}
+      />
+      <nav className="inbox-filters" aria-label="Show">
+        {FILTERS.map((f) => (
+          <button key={f.id} type="button" aria-pressed={filter === f.id} onClick={() => { setFilter(f.id); setOpenKey(null); }}>
+            {f.label}
+            {count(f.id) > 0 && <em>{count(f.id)}</em>}
+          </button>
+        ))}
+      </nav>
+      <section className="card inbox">
+        {shown.length === 0 ? (
+          <Empty icon={<Icon name="check" size={30} />}>{EMPTY[filter]}</Empty>
+        ) : (
+          <ul className="inbox-list">
+            {shown.map((i) => {
+              const open = openKey === i.key;
+              return (
+                <li key={i.key} className={`${i.todo ? 'todo' : ''}${open ? ' open' : ''}`}>
+                  <button type="button" className="inbox-row" aria-expanded={open} aria-label={`${i.todo ? 'Waiting: ' : ''}${i.label}, ${i.title}. ${i.sub}. ${ago(i.at)}`} onClick={() => setOpenKey(open ? null : i.key)}>
+                    <span className="inbox-dot" aria-label={i.todo ? 'Waiting for you' : undefined} />
+                    <span className="inbox-main">
+                      <span className="inbox-label">{i.label}</span>
+                      <span className="inbox-title">{i.title}</span>
+                      <span className="inbox-sub">{i.sub}</span>
+                    </span>
+                    <span className="inbox-when">{ago(i.at)}</span>
+                  </button>
+                  {open && <div className="inbox-open">{i.open()}</div>}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+    </>
+  );
+};
+
+const EMPTY: Record<Filter, React.ReactNode> = {
+  todo: 'All caught up. Nothing is waiting for you.',
+  message: 'No messages yet. Clients write to you from their own page.',
+  inquiry: <>No inquiries yet. Clients send them from <a href={href.store()} target="_blank" rel="noopener">your store</a>.</>,
+  request: 'No license requests this week. Clients send them from their app or their page.',
+  done: 'Nothing here yet.',
+};
+
+const oneLine = (text: string) => {
+  const t = text.replace(/\s+/g, ' ').trim();
+  return t.length > 90 ? `${t.slice(0, 90)}…` : t;
+};
+
+function requestSub(r: LicenseRequest): string {
+  const plan = PLAN_LABELS[r.plan];
+  if (r.status === 'pending') return r.plan === 'trial' ? 'Asks for a free trial' : `${plan}${r.paymentReference ? ` · paid, ref ${r.paymentReference}` : ''}`;
+  if (r.status === 'approved') return `${plan} · key sent, the app picks it up`;
+  if (r.status === 'delivered') return `${plan} · delivered`;
+  return `${plan} · declined${r.note ? `: ${r.note}` : ''}`;
+}
+
+/** A client's conversation, right here: reading it marks it read. */
+const MessageDetail: React.FC<{ client: Client }> = ({ client }) => {
+  const control = useControl();
+  const [messages, setMessages] = useState<Message[] | null>(null);
+  const base = `/owner/clients/${encodeURIComponent(client.id)}/messages`;
+  const load = useCallback(async () => setMessages(await api<Message[]>('GET', base)), [base]);
+  useEffect(() => {
+    void load().then(() => control.reload());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [load]);
+  if (!messages) return <p className="muted small">Loading…</p>;
+  return (
+    <div className="stack" style={{ gap: 10 }}>
+      <Thread
+        messages={messages}
+        mine="owner"
+        theirName={client.name.split(' ')[0] || client.name}
+        empty="No messages yet."
+        onSend={async (body) => {
+          await api('POST', base, { body });
+          await load();
+        }}
+      />
+      <a className="small" href={href.client(client.id)}>Open {client.name}'s page</a>
+    </div>
+  );
+};
 
 /** How to answer an inquiry, from the contact they left. */
 const replyLink = (q: Inquiry): { href: string; label: string; external?: boolean } => {
@@ -33,29 +195,8 @@ const replyLink = (q: Inquiry): { href: string; label: string; external?: boolea
   return { href: `mailto:${q.contact}?subject=${encodeURIComponent(`About ${q.product?.name ?? 'our apps'}`)}&body=${encodeURIComponent(hello)}`, label: 'Reply by email' };
 };
 
-const Inquiries: React.FC = () => {
-  const control = useControl();
-  const [showDone, setShowDone] = useState(false);
-  const all = control.inquiries;
-  const fresh = all.filter((q) => q.status === 'new').length;
-  const shown = showDone ? all : all.filter((q) => q.status === 'new');
-  return (
-    <Card
-      title={<>Store inquiries{fresh > 0 && <span className="muted" style={{ marginLeft: 6, fontWeight: 600 }}>{fresh} new</span>}</>}
-      actions={all.length > fresh && <button className="small" onClick={() => setShowDone(!showDone)}>{showDone ? 'Hide done' : 'Show done'}</button>}
-    >
-      {shown.length === 0 ? (
-        <Empty icon={<Icon name="check" size={30} />}>
-          {all.length === 0 ? <>No inquiries yet. Clients send them from <a href={href.store()} target="_blank" rel="noopener">your store</a>.</> : 'All answered.'}
-        </Empty>
-      ) : (
-        <ul className="list">{shown.map((q) => <InquiryRow key={q.id} inquiry={q} />)}</ul>
-      )}
-    </Card>
-  );
-};
-
-const InquiryRow: React.FC<{ inquiry: Inquiry }> = ({ inquiry: q }) => {
+/** A store inquiry: what they said and how to reach them; reply, make them a client, send the installer. */
+const InquiryDetail: React.FC<{ inquiry: Inquiry }> = ({ inquiry: q }) => {
   const control = useControl();
   const reply = replyLink(q);
   const [sending, setSending] = useState(false);
@@ -78,69 +219,24 @@ const InquiryRow: React.FC<{ inquiry: Inquiry }> = ({ inquiry: q }) => {
     await control.reload();
   };
   return (
-    <li className={q.status === 'done' ? 'old' : undefined}>
-      <div className="who">{q.product ? <Tag>{q.product.name}</Tag> : <Tag>Store</Tag>}{q.name}{q.business ? <span className="muted">, {q.business}</span> : null}</div>
-      <div className="meta">{q.contactKind} · {q.contact} · {ago(q.createdAt)}</div>
-      <div className="detail">
-        {q.message ? <p style={{ whiteSpace: 'pre-wrap' }}>{q.message}</p> : <p className="muted small">No message: they'd like to hear about {q.product?.name ?? 'your apps'}.</p>}
-        <div className="row" style={{ alignItems: 'center' }}>
-          <a className="button primary" style={{ flex: '0 0 auto' }} href={reply.href} {...(reply.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{reply.label}</a>
-          {q.contactKind === 'mobile' && <a className="button" style={{ flex: '0 0 auto' }} href={`tel:${q.contact}`}>Call</a>}
-          {existing
-            ? <a className="button" style={{ flex: '0 0 auto' }} href={href.client(existing.id)}>Open client</a>
-            : <div style={{ flex: '0 0 auto' }}><ActionButton onClick={makeClient}>Make a client</ActionButton></div>}
-          <button style={{ flex: '0 0 auto' }} aria-expanded={sending} onClick={() => setSending(!sending)}>Send installer</button>
-          <span style={{ flex: '1 1 auto' }} />
-          {q.status === 'new'
-            ? <div style={{ flex: '0 0 auto' }}><ActionButton className="small" onClick={() => setStatus('done')}>Mark done</ActionButton></div>
-            : <div style={{ flex: '0 0 auto' }}><Chip tone="ok">Done {ago(q.handledAt)}</Chip> <ActionButton className="small" onClick={() => setStatus('new')}>Reopen</ActionButton></div>}
-          <div style={{ flex: '0 0 auto' }}><ActionButton className="small" onClick={remove}>Delete</ActionButton></div>
-        </div>
-        {sending && <SendInstaller productId={q.product?.id} inquiryId={q.id} name={q.name} contactKind={q.contactKind} contact={q.contact} />}
+    <div className="stack" style={{ gap: 12 }}>
+      {q.message ? <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{q.message}</p> : <p className="muted small" style={{ margin: 0 }}>No message: they'd like to hear about {q.product?.name ?? 'your apps'}.</p>}
+      <p className="small muted mono" style={{ margin: 0 }}>{q.contactKind} · {q.contact}</p>
+      <div className="row" style={{ alignItems: 'center' }}>
+        <a className="button primary" style={{ flex: '0 0 auto' }} href={reply.href} {...(reply.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{reply.label}</a>
+        {q.contactKind === 'mobile' && <a className="button" style={{ flex: '0 0 auto' }} href={`tel:${q.contact}`}>Call</a>}
+        {existing
+          ? <a className="button" style={{ flex: '0 0 auto' }} href={href.client(existing.id)}>Open client</a>
+          : <div style={{ flex: '0 0 auto' }}><ActionButton onClick={makeClient}>Make a client</ActionButton></div>}
+        <button style={{ flex: '0 0 auto' }} aria-expanded={sending} onClick={() => setSending(!sending)}>Send installer</button>
       </div>
-    </li>
-  );
-};
-
-/** Clients who wrote to you: the newest conversations first, unread ones on top. */
-const Messages: React.FC = () => {
-  const control = useControl();
-  const talking = control.clients
-    .filter((c) => c.lastMessageAt)
-    .sort((a, b) => (b.unreadMessages > 0 ? 1 : 0) - (a.unreadMessages > 0 ? 1 : 0) || Date.parse(b.lastMessageAt!) - Date.parse(a.lastMessageAt!))
-    .slice(0, 10);
-  if (talking.length === 0) return null;
-  return (
-    <Card title={<>Messages{control.unreadMessages > 0 && <span className="muted" style={{ marginLeft: 6, fontWeight: 600 }}>{control.unreadMessages} new</span>}</>}>
-      <ul className="list">
-        {talking.map((c) => (
-          <li key={c.id}>
-            <div className="who"><a href={href.client(c.id)}>{c.name}</a>{c.business && <span className="muted">, {c.business}</span>}</div>
-            <div className="meta">last message {ago(c.lastMessageAt)}</div>
-            <div className="acts">
-              {c.unreadMessages > 0 && <Chip tone="warn">{c.unreadMessages} new</Chip>}
-              <a className="button small" href={href.client(c.id)}>Open</a>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  );
-};
-
-const Requests: React.FC = () => {
-  const control = useControl();
-  const signing = useSigning();
-  const shown = control.requests.filter((r) => r.status === 'pending' || r.status === 'approved' || Date.now() - Date.parse(r.decidedAt || r.createdAt) < WEEK);
-  const pending = shown.filter((r) => r.status === 'pending').length;
-  return (
-    <Card title="License requests" actions={<button className="small" onClick={() => void control.reload()}>Refresh</button>}>
-      {pending > 0 && !signing.unlocked && <Msg tone="warn">Unlock the signing key (<a href={href.settings}>Settings</a>, or the key button) to approve requests.</Msg>}
-      {shown.length === 0 ? (
-        <Empty icon={<Icon name="check" size={30} />}>No requests this week. Clients send them from their app: I've paid, or Ask my provider for a free trial.</Empty>
-      ) : (
-        <ul className="list">{shown.map((r) => <RequestRow key={r.id} request={r} showApp />)}</ul>
-      )}
-    </Card>
+      {sending && <SendInstaller productId={q.product?.id} inquiryId={q.id} name={q.name} contactKind={q.contactKind} contact={q.contact} />}
+      <div className="row inbox-quiet">
+        {q.status === 'new'
+          ? <div style={{ flex: '0 0 auto' }}><ActionButton className="small" onClick={() => setStatus('done')}>Mark done</ActionButton></div>
+          : <div style={{ flex: '0 0 auto' }}><ActionButton className="small" onClick={() => setStatus('new')}>Back to To do</ActionButton></div>}
+        <div style={{ flex: '0 0 auto' }}><ActionButton className="small" onClick={remove}>Delete</ActionButton></div>
+      </div>
+    </div>
   );
 };
