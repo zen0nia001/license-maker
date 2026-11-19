@@ -53,6 +53,23 @@ export const isOwnerDevice = () => {
     return false;
   }
 };
+/** This browser tab came in through the owner's private address (#/owner or an add-device link): its owner pages stay
+ *  open (to sign in and look around) until the tab is closed, even before this device is known as the owner's. */
+const OWNER_TAB_KEY = 'controlCenter.ownerTab';
+export const isOwnerTab = () => {
+  try {
+    return sessionStorage.getItem(OWNER_TAB_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+export const markOwnerTab = () => {
+  try {
+    sessionStorage.setItem(OWNER_TAB_KEY, '1');
+  } catch {
+    /* this page only */
+  }
+};
 const markOwnerDevice = () => {
   try {
     localStorage.setItem(OWNER_DEVICE_KEY, '1');
