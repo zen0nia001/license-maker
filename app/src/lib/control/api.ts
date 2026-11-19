@@ -146,6 +146,31 @@ export async function clientDownload(path: string, filename: string): Promise<vo
   window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
+/** Sends a picture as the signed-in client (their payment screenshot: PUT /client/license-requests/:id/proof). */
+export async function clientUpload<T>(path: string, file: Blob): Promise<T> {
+  if (!CONTROL_URL) throw new Error('Control is not set up for this address.');
+  let res: Response;
+  try {
+    res = await fetch(CONTROL_URL + path, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/octet-stream', ...(clientMemory ? { Authorization: `Bearer ${clientMemory.token}` } : {}) },
+      body: file,
+      cache: 'no-store',
+    });
+  } catch {
+    throw new Error("Control can't be reached. Check the internet connection.");
+  }
+  if (res.status === 401) clientSession.clear();
+  return answer<T>(res);
+}
+
+/** A file the owner opens (a client's payment screenshot), as a Blob. */
+export async function apiBlob(path: string): Promise<Blob> {
+  const res = await request('GET', path, undefined, memory?.token);
+  if (!res.ok) await answer(res);
+  return res.blob();
+}
+
 /** A call as the signed-in client (/client/…). Never sends the owner's token. */
 export async function clientApi<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await request(method, path, body, clientMemory?.token);

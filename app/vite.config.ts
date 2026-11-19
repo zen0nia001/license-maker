@@ -19,7 +19,7 @@ const csp = (): Plugin => ({
       "default-src 'self'",
       "script-src 'self'",
       "style-src 'self' 'unsafe-inline'", // React's style={…} attributes
-      "img-src 'self' data:",
+      "img-src 'self' data: blob:", // blob: the receipt screenshots this page itself opens (lib/image.ts, Requests)
       `connect-src 'self' ${control}`,
       "manifest-src 'self'",
       "worker-src 'self'",

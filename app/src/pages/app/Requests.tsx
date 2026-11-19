@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { codeOf } from '../../lib/apps';
-import { api } from '../../lib/control/api';
+import { api, apiBlob } from '../../lib/control/api';
 import type { LicenseRequest } from '../../lib/control/types';
 import { fmtDay, PLAN_LABELS, requestPeriod } from '../../lib/license/core';
 import { isAmount, peso } from '../../lib/price';
@@ -52,7 +52,41 @@ const PaidFor: React.FC<{ request: LicenseRequest }> = ({ request: r }) => {
       <div><span className="small muted">Paid for</span><b>{PLAN_LABELS[r.plan]}{price && <> · {price}{isAmount(raw) && <small> / {r.plan === 'yearly' ? 'year' : 'month'}</small>}</>}</b></div>
       <div><span className="small muted">Payment reference</span><b className="mono">{r.paymentReference}</b></div>
       <div><span className="small muted">The key will run</span><b>{fmtDay(start)} to {fmtDay(lastDay)}</b></div>
+      {r.proof && <ProofView request={r} />}
       <p className="small muted" style={{ margin: 0 }}>Check that {price ?? 'the payment'} arrived with this reference before you send the key.</p>
+    </div>
+  );
+};
+
+/** The client's receipt screenshot, opened on demand (it isn't loaded with the list). */
+const ProofView: React.FC<{ request: LicenseRequest }> = ({ request: r }) => {
+  const [url, setUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
+  const open = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      setUrl(URL.createObjectURL(await apiBlob(`/owner/license-requests/${encodeURIComponent(r.id)}/proof`)));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (url) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" title="Open it full size" className="proof">
+        <img src={url} alt={`Receipt from ${requestName(r)}`} />
+      </a>
+    );
+  }
+  return (
+    <div>
+      <span className="small muted">Receipt screenshot</span>
+      <button type="button" className="small" disabled={busy} onClick={() => void open()}>{busy ? 'Opening…' : 'See it'}</button>
+      {error && <Msg>{error}</Msg>}
     </div>
   );
 };

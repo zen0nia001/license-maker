@@ -2,7 +2,8 @@
 // licenses and keys, renewals, and messages with their provider. Its own simple page, like the store: none of the
 // owner's menus, nothing of the owner's session, and never the signing key.
 import React, { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-import { clientApi, clientDownload, CONTROL_URL, currentClientSession, onClientSession } from '../../lib/control/api';
+import { clientApi, clientDownload, clientUpload, CONTROL_URL, currentClientSession, onClientSession } from '../../lib/control/api';
+import { shrinkScreenshot } from '../../lib/image';
 import { alreadyHasPasskey, clientSignIn, clientSignOut, joinWithInvite, passkeyError, readInvite, type InviteInfo } from '../../lib/control/passkey';
 import type { Message, MyInstallation, MyInstaller, MyRequest } from '../../lib/control/types';
 import { ago, day, gb, plural } from '../../lib/format';
@@ -297,8 +298,30 @@ const MyInstall: React.FC<{ install: MyInstallation; installer: MyInstaller | nu
 const RenewForm: React.FC<{ install: MyInstallation; onDone: () => Promise<void>; onCancel: () => void }> = ({ install, onDone, onCancel }) => {
   const [plan, setPlan] = useState<'monthly' | 'yearly' | 'trial'>('monthly');
   const [ref, setRef] = useState('');
+  const [shot, setShot] = useState<{ blob: Blob; url: string } | null>(null);
+  const [shotError, setShotError] = useState<string | null>(null);
+  useEffect(() => () => { if (shot) URL.revokeObjectURL(shot.url); }, [shot]);
+  const pick = async (file: File | undefined) => {
+    setShotError(null);
+    if (!file) return;
+    try {
+      const blob = await shrinkScreenshot(file);
+      setShot({ blob, url: URL.createObjectURL(blob) });
+    } catch (e) {
+      setShot(null);
+      setShotError((e as Error).message);
+    }
+  };
   const send = async () => {
-    await clientApi('POST', '/client/license-requests', { installation: install.id, plan, paymentReference: plan === 'trial' ? undefined : ref });
+    const sent = await clientApi<{ id: string }>('POST', '/client/license-requests', { installation: install.id, plan, paymentReference: plan === 'trial' ? undefined : ref });
+    if (plan !== 'trial' && shot) {
+      try {
+        await clientUpload(`/client/license-requests/${encodeURIComponent(sent.id)}/proof`, shot.blob);
+      } catch (e) {
+        // The request is in (sending again updates it): say so, and keep the form open to try the picture again.
+        throw new Error(`Your request was sent, but the screenshot wasn't: ${(e as Error).message} Press Send again to retry, or Cancel: your provider can still find the payment by its reference.`);
+      }
+    }
     await onDone();
   };
   return (
@@ -309,6 +332,19 @@ const RenewForm: React.FC<{ install: MyInstallation; onDone: () => Promise<void>
       ) : (
         <Field label="Payment reference" hint="Pay your provider first (GCash, bank…), then type the reference number from the receipt.">
           <input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. 1234 567 890" autoComplete="off" />
+        </Field>
+      )}
+      {plan !== 'trial' && (
+        <Field label="Screenshot of the receipt (optional)" hint="Helps your provider find your payment. It's made small on this device and deleted a month after they decide.">
+          <input type="file" accept="image/*" onChange={(e) => void pick(e.target.files?.[0])} />
+          {shot && (
+            <div className="row" style={{ alignItems: 'center', marginTop: 8 }}>
+              <img src={shot.url} alt="Your receipt" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)', flex: 'none' }} />
+              <span className="small muted" style={{ flex: '1 1 auto' }}>Ready to send ({Math.max(1, Math.round(shot.blob.size / 1024))} KB)</span>
+              <button type="button" className="small" style={{ flex: '0 0 auto' }} onClick={() => setShot(null)}>Remove</button>
+            </div>
+          )}
+          {shotError && <Msg>{shotError}</Msg>}
         </Field>
       )}
       <div className="row">
@@ -333,6 +369,7 @@ const MyLicenses: React.FC<{ requests: MyRequest[] }> = ({ requests }) => {
               <div className="meta">{r.installation.installationId ?? ''} · asked {day(r.createdAt)}{r.expiresAt ? ` · until ${day(r.expiresAt)}` : ''}</div>
               <div className="acts"><Chip tone={tone(r.status)}>{r.status === 'delivered' ? 'Active' : r.status === 'approved' ? 'Approved' : r.status === 'pending' ? 'Waiting' : 'Declined'}</Chip></div>
               {r.status === 'declined' && r.note && <div className="wide small">Your provider: “{r.note}”</div>}
+              {r.proof && r.status === 'pending' && <div className="wide small muted">Receipt screenshot sent.</div>}
               {r.licenseKey && (
                 <div className="wide row" style={{ alignItems: 'center' }}>
                   <span className="small muted" style={{ flex: '1 1 auto' }}>It turns on by itself. If your app ever asks for the key, copy it from here.</span>

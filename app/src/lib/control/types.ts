@@ -71,6 +71,8 @@ export type LicenseRequest = {
   deliveredAt: string | null;
   /** Control decided it by itself: a free trial sent, or refused as already used. */
   auto?: boolean;
+  /** The client's payment screenshot (GET /owner/license-requests/:id/proof), kept 30 days after the decision. */
+  proof?: { size: number; uploadedAt: string } | null;
   currentLicense: { state: string; plan: string | null; expiresAt: string | null } | null;
 };
 
@@ -167,4 +169,6 @@ export type MyRequest = {
   decidedAt: string | null;
   deliveredAt: string | null;
   licenseKey: string | null;
+  /** A payment screenshot is on it. */
+  proof?: boolean;
 };
