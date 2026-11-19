@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/control/api';
 import { addPasskey, passkeyError } from '../lib/control/passkey';
+import { PASSWORD_MIN, setPassword, type PasswordInfo } from '../lib/control/password';
 import { pushState, turnPushOff, turnPushOn, type PushState } from '../lib/control/push';
 import type { Passkey, StoreDetails } from '../lib/control/types';
 import { day } from '../lib/format';
@@ -191,16 +192,107 @@ const ControlCard: React.FC = () => {
           ))}
         </ul>
       </div>
+      <DeviceLink />
       <div className="row" style={{ alignItems: 'flex-end' }}>
-        <Field label="Add another device's passkey"><input value={device} onChange={(e) => setDevice(e.target.value)} placeholder="e.g. Laptop" autoComplete="off" /></Field>
+        <Field label="Or put a passkey on this device"><input value={device} onChange={(e) => setDevice(e.target.value)} placeholder="e.g. Laptop" autoComplete="off" /></Field>
         <button style={{ flex: '0 0 auto' }} onClick={async () => {
           setError(null);
           try { await addPasskey(device.trim() || 'Device'); setDevice(''); await load(); } catch (e) { setError(passkeyError(e, 'Adding the passkey')); }
         }}>Add passkey</button>
       </div>
-      <p className="small muted">Do this on the device that should get the passkey, while signed in there.</p>
       <Say text={error} />
+      <PasswordSection hasPasskey={passkeys.length > 0} />
     </Card>
+  );
+};
+
+/** A one-time link (an hour) that puts your passkey on another phone or computer: open it there. */
+const DeviceLink: React.FC = () => {
+  const [link, setLink] = useState<{ link: string; expiresAt: string } | null>(null);
+  return (
+    <div className="stack" style={{ gap: 8 }}>
+      <h3 className="small" style={{ marginBottom: 0 }}>Add another device</h3>
+      {link ? (
+        <>
+          <p className="small">Open this link on the other phone or computer, within the hour (it works once):</p>
+          <div className="mono small" style={{ overflowWrap: 'anywhere' }}>{link.link}</div>
+          <div className="row">
+            <div style={{ flex: '0 0 auto' }}><CopyButton text={link.link} label="Copy link" className="primary small" /></div>
+            <button className="small" style={{ flex: '0 0 auto' }} onClick={() => setLink(null)}>Done</button>
+          </div>
+        </>
+      ) : (
+        <div className="row" style={{ alignItems: 'center' }}>
+          <p className="small muted" style={{ flex: '3 1 200px' }}>Make a link, send it to yourself (Messenger, email), and open it on the other device to put your passkey there.</p>
+          <div style={{ flex: '0 0 auto' }}><ActionButton className="small" onClick={async () => setLink(await api<{ link: string; expiresAt: string }>('POST', '/owner/device-invites'))}>Make link</ActionButton></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/** The password sign-in: the fallback for when no device with your passkey is at hand. */
+const PasswordSection: React.FC<{ hasPasskey: boolean }> = ({ hasPasskey }) => {
+  const control = useControl();
+  const [info, setInfo] = useState<PasswordInfo | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [username, setUsername] = useState('admin');
+  const [pw, setPw] = useState('');
+  const [again, setAgain] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const load = useCallback(async () => {
+    try {
+      const i = await api<PasswordInfo>('GET', '/owner/password');
+      setInfo(i);
+      if (i.username) setUsername(i.username);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const save = async () => {
+    if (pw !== again) throw new Error("The two passwords aren't the same.");
+    await setPassword(pw, username);
+    setPw('');
+    setAgain('');
+    setEditing(false);
+    await load();
+  };
+  const remove = async () => {
+    if (!window.confirm('Turn password sign-in off? Only your passkeys will sign in.')) return;
+    await api('DELETE', '/owner/password');
+    await load();
+    await control.reload();
+  };
+
+  return (
+    <div className="stack" style={{ gap: 8 }}>
+      <h3 className="small" style={{ marginBottom: 0 }}>Password sign-in</h3>
+      {info && !editing && (
+        <div className="row" style={{ alignItems: 'center' }}>
+          <p className="small muted" style={{ flex: '3 1 200px' }}>
+            {info.set ? <>On, as <b>{info.username}</b>{info.updatedAt ? `, changed ${day(info.updatedAt)}` : ''}. For when no device with your passkey is at hand. 5 wrong tries lock it for 15 minutes.</> : 'Off. Only your passkeys sign in.'}
+          </p>
+          <button className="small" style={{ flex: '0 0 auto' }} onClick={() => setEditing(true)}>{info.set ? 'Change' : 'Set a password'}</button>
+          {info.set && hasPasskey && <div style={{ flex: '0 0 auto' }}><ActionButton className="small" onClick={remove}>Turn off</ActionButton></div>}
+        </div>
+      )}
+      {editing && (
+        <div className="stack" style={{ gap: 8 }}>
+          <Field label="Username"><input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" /></Field>
+          <Field label="New password" hint={`At least ${PASSWORD_MIN} characters.`}><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" /></Field>
+          <Field label="Once more"><input type="password" value={again} onChange={(e) => setAgain(e.target.value)} autoComplete="new-password" /></Field>
+          <div className="row">
+            <div style={{ flex: '0 0 auto' }}><ActionButton className="primary small" onClick={save}>Save</ActionButton></div>
+            <button className="small" style={{ flex: '0 0 auto' }} onClick={() => { setEditing(false); setPw(''); setAgain(''); }}>Cancel</button>
+          </div>
+        </div>
+      )}
+      <Say text={error} />
+    </div>
   );
 };
 

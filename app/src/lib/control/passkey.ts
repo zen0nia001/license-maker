@@ -50,12 +50,13 @@ function credentialJSON(cred: PublicKeyCredential) {
   };
 }
 
-/** Puts a passkey for Control on this device: the first one with the setup code, more while signed in. */
-export async function addPasskey(name: string, setupCode?: string): Promise<void> {
-  const { options, challengeToken } = await api<{ options: Json; challengeToken: string }>('POST', '/owner/auth/register/options', { setupCode });
+/** Puts a passkey for Control on this device: the first one with the setup code, more while signed in, or with an
+ *  add-device link made on a signed-in device (then this device is signed in too). */
+export async function addPasskey(name: string, setupCode?: string, deviceInvite?: string): Promise<void> {
+  const { options, challengeToken } = await api<{ options: Json; challengeToken: string }>('POST', '/owner/auth/register/options', { setupCode, deviceInvite });
   const cred = (await navigator.credentials.create({ publicKey: creationOptions(options) })) as PublicKeyCredential | null;
   if (!cred) throw new Error('No passkey was made.');
-  const done = await api<{ token?: string; expiresAt?: string }>('POST', '/owner/auth/register/verify', { setupCode, challengeToken, name, response: credentialJSON(cred) });
+  const done = await api<{ token?: string; expiresAt?: string }>('POST', '/owner/auth/register/verify', { setupCode, deviceInvite, challengeToken, name, response: credentialJSON(cred) });
   if (done.token && done.expiresAt) session.set({ token: done.token, expiresAt: done.expiresAt });
 }
 

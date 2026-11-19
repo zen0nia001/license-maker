@@ -16,6 +16,8 @@ import { AddApp } from './pages/AddApp';
 import { StorePage } from './pages/store/Store';
 import { ClientPage } from './pages/ClientPage';
 import { JoinPage, MyPage } from './pages/client/Portal';
+import { AddDevice } from './pages/AddDevice';
+import { ChooseOwnPassword } from './components/ControlSignIn';
 
 type NavItem = { to: string; label: string; icon: IconName; active: (r: Route) => boolean; count?: number; external?: boolean };
 
@@ -143,6 +145,7 @@ export const App: React.FC = () => {
       </aside>
 
       <main className="page">
+        {control.mustChangePassword && route.page !== 'addDevice' ? <ChooseOwnPassword /> : <>
         {route.page === 'home' && <Home />}
         {route.page === 'dashboard' && <Dashboard />}
         {route.page === 'clients' && <Clients />}
@@ -153,6 +156,8 @@ export const App: React.FC = () => {
         {route.page === 'settings' && <Settings />}
         {route.page === 'check' && <Check />}
         {route.page === 'add' && <AddApp />}
+        {route.page === 'addDevice' && <AddDevice key={route.token} token={route.token} />}
+        </>}
       </main>
     </div>
   );

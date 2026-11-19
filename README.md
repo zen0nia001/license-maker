@@ -35,6 +35,8 @@ GitHub Pages address forwards there; a phone set up there needs **Settings → S
   bottom (`#/owner`, for setting up a new device of yours).
 - **Inbox → Make a client**: turns a store inquiry into a client (name, business, contact, their message as your
   note), ready to invite; if one with that contact exists, **Open client** instead.
+- **Owner sign-in**: your passkey, or your **password** (the fallback; a seeded one must be changed at once). On a
+  new phone or laptop: **Settings → Add another device → Make link**, open the link there (`#/add-device/…`).
 - **Check a key**: is a key genuine, for whom, until when.
 - **Settings**: the signing key (set up from the locked backup code or the key file, unlock, locked backup code,
   remove), the payment details written into every key, and Control (passkeys, notifications, sign out).

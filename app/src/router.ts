@@ -20,6 +20,8 @@ export type Route =
   | { page: 'settings' }
   | { page: 'check' }
   | { page: 'add' }
+  /** A one-time link that puts the owner's passkey on this device. */
+  | { page: 'addDevice'; token: string }
   /** The public store (no sign-in): every published app, or one of them. */
   | { page: 'store'; app: string | null }
   /** A client's one-time invite link (#/join/<token>): set up their passkey. */
@@ -36,6 +38,7 @@ export function parse(hash: string): Route {
   }
   if (parts[0] === 'owner') return { page: 'home', owner: true };
   if (parts[0] === 'store') return { page: 'store', app: parts[1] ? decodeURIComponent(parts[1]) : null };
+  if (parts[0] === 'add-device' && parts[1]) return { page: 'addDevice', token: parts[1] };
   if (parts[0] === 'add') return { page: 'add' };
   if (parts[0] === 'dashboard') return { page: 'dashboard' };
   if (parts[0] === 'clients' && parts[1]) return { page: 'client', id: decodeURIComponent(parts[1]) };

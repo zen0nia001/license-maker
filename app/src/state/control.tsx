@@ -10,6 +10,10 @@ export type ControlState = {
   signedIn: boolean;
   /** Whether Control has an owner passkey yet (null until known): no → set up with the setup code. */
   hasPasskey: boolean | null;
+  /** Whether a password sign-in is set up (the fallback to passkeys). */
+  hasPassword: boolean;
+  /** Signed in with a seeded password that must be changed before anything else. */
+  mustChangePassword: boolean;
   products: Product[];
   installations: Installation[];
   requests: LicenseRequest[];
@@ -24,8 +28,8 @@ export type ControlState = {
   loading: boolean;
   error: string | null;
   reload: () => Promise<void>;
-  /** After a passkey sign-in or setup stored a session. */
-  signedInNow: () => void;
+  /** After a sign-in or setup stored a session (mustChange: a seeded password was used). */
+  signedInNow: (mustChange?: boolean) => void;
   signOut: () => Promise<void>;
 };
 
@@ -67,6 +71,8 @@ export const useControl = () => {
 export const ControlProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [signedIn, setSignedIn] = useState(() => !!currentSession());
   const [hasPasskey, setHasPasskey] = useState<boolean | null>(null);
+  const [hasPassword, setHasPassword] = useState(false);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [installations, setInstallations] = useState<Installation[]>([]);
   const [requests, setRequests] = useState<LicenseRequest[]>([]);
@@ -79,7 +85,9 @@ export const ControlProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!CONTROL_URL) return;
     if (!currentSession()) {
       try {
-        setHasPasskey((await api<{ hasPasskey: boolean }>('GET', '/owner/auth/status')).hasPasskey);
+        const status = await api<{ hasPasskey: boolean; hasPassword?: boolean }>('GET', '/owner/auth/status');
+        setHasPasskey(status.hasPasskey);
+        setHasPassword(!!status.hasPassword);
         setError(null);
       } catch (e) {
         setError((e as Error).message);
@@ -88,6 +96,13 @@ export const ControlProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     setLoading(true);
     try {
+      // A seeded password must be changed first: until then Control answers nothing else.
+      const me = await api<{ mustChangePassword?: boolean }>('GET', '/owner/me');
+      setMustChangePassword(!!me.mustChangePassword);
+      if (me.mustChangePassword) {
+        setError(null);
+        return;
+      }
       const [p, i, r, q, cl] = await Promise.all([
         api<Product[]>('GET', '/owner/products'),
         api<Installation[]>('GET', '/owner/installations'),
@@ -134,6 +149,8 @@ export const ControlProvider: React.FC<{ children: React.ReactNode }> = ({ child
       available: !!CONTROL_URL,
       signedIn,
       hasPasskey,
+      hasPassword,
+      mustChangePassword: signedIn && mustChangePassword,
       products: signedIn && products.length ? products : BUILT_IN_PRODUCTS,
       installations: signedIn ? installations : [],
       requests: signedIn ? requests : [],
@@ -146,7 +163,10 @@ export const ControlProvider: React.FC<{ children: React.ReactNode }> = ({ child
       loading,
       error,
       reload,
-      signedInNow: () => setSignedIn(true),
+      signedInNow: (mustChange = false) => {
+        setMustChangePassword(mustChange);
+        setSignedIn(true);
+      },
       async signOut() {
         try {
           await api('POST', '/owner/auth/logout');
@@ -157,7 +177,7 @@ export const ControlProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setSignedIn(false);
       },
     }),
-    [signedIn, hasPasskey, products, installations, requests, inquiries, clients, loading, error, reload],
+    [signedIn, hasPasskey, hasPassword, mustChangePassword, products, installations, requests, inquiries, clients, loading, error, reload],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 };
