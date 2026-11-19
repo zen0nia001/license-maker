@@ -16,6 +16,13 @@ const BUILD: Record<string, string> = {
   spx: 'In C:\\Dev\\SPX: powershell -ExecutionPolicy Bypass -File .\\tools\\make-client-package.ps1  →  dist\\SPX-client.zip',
 };
 
+/** Another app whose installer this file looks like (its name carries that app's id, not this one's), or null. */
+export function looksLikeOther(filename: string, product: { id: string }, products: { id: string; name: string }[]) {
+  const name = filename.toLowerCase();
+  if (name.includes(product.id.toLowerCase())) return null;
+  return products.find((p) => p.id !== product.id && name.includes(p.id.toLowerCase())) ?? null;
+}
+
 export const InstallerTab: React.FC<TabProps> = ({ product }) => {
   const control = useControl();
   const current = control.installers.find((i) => i.product === product.id);
@@ -25,6 +32,11 @@ export const InstallerTab: React.FC<TabProps> = ({ product }) => {
   const [done, setDone] = useState(false);
 
   const upload = async (file: File) => {
+    const other = looksLikeOther(file.name, product, control.products);
+    if (other && !window.confirm(`"${file.name}" looks like ${other.name}'s installer, not ${product.name}'s.\n\nClients who download ${product.name} would get ${other.name}. Upload it to ${product.name} anyway?`)) {
+      if (input.current) input.current.value = '';
+      return;
+    }
     setBusy(true);
     setError(null);
     setDone(false);
@@ -53,6 +65,11 @@ export const InstallerTab: React.FC<TabProps> = ({ product }) => {
           private link to download it: 7 days, 3 downloads. Clients can also download it from their own page. It holds the apps'
           download key, so it is never on the public store.
         </p>
+        {current && looksLikeOther(current.filename, product, control.products) && (
+          <Msg tone="bad">
+            This looks like {looksLikeOther(current.filename, product, control.products)!.name}'s installer ({current.filename}): clients who download {product.name} get it. Upload {product.name}'s own installer.
+          </Msg>
+        )}
         {current ? (
           <Facts rows={[
             ['File', current.filename],
