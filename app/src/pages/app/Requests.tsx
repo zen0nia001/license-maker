@@ -23,7 +23,7 @@ export const Requests: React.FC<TabProps> = ({ product }) => {
   return (
     <Card title="License requests" actions={<button className="small" onClick={() => void control.reload()}>Refresh</button>}>
       {shown.length === 0 ? (
-        <p className="muted small">No requests in the last week. Clients send them from the app: I've paid, or Ask my provider for a free trial.</p>
+        <p className="muted small">No requests in the last week. Clients send them from the app: Confirm payment, or Ask my provider for a free trial.</p>
       ) : (
         <ul className="list">{shown.map((r) => <RequestRow key={r.id} request={r} />)}</ul>
       )}
@@ -40,7 +40,7 @@ export const RequestRow: React.FC<{ request: LicenseRequest; showApp?: boolean }
   </li>
 );
 
-/** "I've paid": the plan they chose, its price on your store, the reference to look for, and the days the key will run. */
+/** A payment confirmation: the plan they chose, its price on your store, the reference to look for, and the days the key will run. */
 const PaidFor: React.FC<{ request: LicenseRequest }> = ({ request: r }) => {
   const control = useControl();
   const product = control.products.find((p) => p.id === r.product.id);

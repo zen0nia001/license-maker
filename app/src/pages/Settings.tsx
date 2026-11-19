@@ -117,7 +117,7 @@ const SigningKeyCard: React.FC = () => {
   );
 };
 
-/** How clients pay you, and where "I've paid" reaches you: written into every key made here. */
+/** How clients pay you, and where "Confirm payment" reaches you: written into every key made here. */
 const PaymentCard: React.FC = () => {
   const signing = useSigning();
   const p = signing.payment;
@@ -296,7 +296,7 @@ const PasswordSection: React.FC<{ hasPasskey: boolean }> = ({ hasPasskey }) => {
   );
 };
 
-/** "How to pay" on the automatic trial keys: the client's trial notice and "I've paid" show it. The keys made on this
+/** "How to pay" on the automatic trial keys: the client's trial notice and "Confirm payment" show it. The keys made on this
  *  phone use its own "Payment details on every key"; one tap copies those here. */
 const TrialPayment: React.FC<{ store: StoreDetails; onChange: (payment: string) => void }> = ({ store, onChange }) => {
   const signing = useSigning();
@@ -368,7 +368,7 @@ const StoreCard: React.FC = () => {
         <Field label="Messenger username"><input value={store.messenger ?? ''} onChange={(e) => set('messenger', e.target.value)} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="m.me/juan.delacruz" /></Field>
         <Field label="Mobile (for texts)"><input value={store.mobile ?? ''} inputMode="tel" onChange={(e) => set('mobile', e.target.value)} autoComplete="off" placeholder="0917 000 0000" /></Field>
       </div>
-      <p className="small muted">Shown on the store, so clients can message you about an app. Automatic trial keys carry them too, for the client's "I've paid".</p>
+      <p className="small muted">Shown on the store, so clients can message you about an app. Automatic trial keys carry them too, for the client's "Confirm payment".</p>
       <TrialPayment store={store} onChange={(payment) => set('payment', payment)} />
       {saved && <Msg tone="ok">Saved.</Msg>}
       <ActionButton className="primary" onClick={async () => { setStore(await api<StoreDetails>('PUT', '/owner/store', store)); setSaved(true); }}>Save store details</ActionButton>

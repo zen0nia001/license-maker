@@ -137,10 +137,10 @@ export async function makeLicense(privateKey: CryptoKey, publicKey: CryptoKey, i
   if (payText) payload.pay = payText; // shown on the client's trial notice and license screen
   const msgr = (messenger || '').trim().replace(/^(https?:\/\/)?(www\.)?(m\.me|facebook\.com|fb\.com)\//i, '').replace(/\/+$/, '');
   if (msgr && !/^[A-Za-z0-9.]{3,50}$/.test(msgr)) throw new Error('That Messenger username looks wrong: use the name in m.me/juan.delacruz.');
-  if (msgr) payload.msgr = msgr; // "I've paid" opens m.me/<this>
+  if (msgr) payload.msgr = msgr; // "Confirm payment" opens m.me/<this>
   const tel = (mobile || '').replace(/[\s()-]/g, '');
   if (tel && !/^\+?[0-9]{7,15}$/.test(tel)) throw new Error('That mobile number looks wrong.');
-  if (tel) payload.tel = tel; // "I've paid" by SMS
+  if (tel) payload.tel = tel; // "Confirm payment" by SMS
   const body = UTF8.encode(JSON.stringify(payload));
   const signature = new Uint8Array(await crypto.subtle.sign(SIGN, privateKey, signedBytes(prefix, body)));
   const license = `${prefix}.${b64url(body)}.${b64url(signature)}`;
