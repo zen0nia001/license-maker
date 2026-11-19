@@ -36,9 +36,9 @@ npm run preview    # the built app (service worker, CSP) on 3060
   `clientApi` (client session in localStorage `control.clientSession`, never the owner's sessionStorage token), never
   the signing key or owner data. The owner's client pages are `pages/Clients.tsx` and `pages/ClientPage.tsx`;
   conversations use `components/Thread.tsx` on both sides.
-- **Front door** (`App.tsx`): `#/` is the owner's Home only on the owner's device (`isOwnerDevice()` in
-  `state/control.tsx`, set once signed in, or the signing key is here); else the client's area or the store.
-  `#/owner` always opens the owner's Home.
+- **Private owner pages** (`App.tsx`): every owner page (`#/` too) shows only on the owner's device (`isOwnerDevice()` in
+  `state/control.tsx`, set once signed in, or the signing key is here); elsewhere it opens the client's area or the
+  store. Only `#/owner` and `#/add-device/…` open the owner's sign-in anywhere. Nothing public may link to them.
 - **Design is our own and monochrome** (README "Design"): greys only; colour just for status dots and error text. the shell is `App.tsx` (rail, drawer), tokens and components in
   `app/src/styles.css`, icons drawn in `components/Icon.tsx`. Don't copy another product's look, icons or assets.
   Font: Manrope, Latin file only (`styles.css` @font-face), so the offline cache stays small.

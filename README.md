@@ -31,8 +31,9 @@ GitHub Pages address forwards there; a phone set up there needs **Settings → S
   for a license (it reaches your Inbox like Send to my provider), their licenses with the key to copy, and messages
   with you. Its own page like the store: none of your menus, your session or your signing key.
 - **The address itself** is a front door: on your device (signed in as owner once, or with the signing key) it
-  opens your Home; on a client's device, their own page; for anyone else, the store, with **Owner sign in** at the
-  bottom (`#/owner`, for setting up a new device of yours).
+  opens your Home; on a client's device, their own page; for anyone else, the store. Your pages are **private**: on
+  other devices every owner page opens the store instead, and nothing links to your sign-in. Keep your private
+  address, `…/#/owner` (bookmark it), for a new device; or use an add-device link.
 - **Inbox → Make a client**: turns a store inquiry into a client (name, business, contact, their message as your
   note), ready to invite; if one with that contact exists, **Open client** instead.
 - **Owner sign-in**: your passkey, or your **password** (the fallback; a seeded one must be changed at once). On a

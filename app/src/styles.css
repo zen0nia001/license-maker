@@ -322,5 +322,3 @@ a.button.small { padding: 6px 12px; font-size: .85rem; }
 .my-tabs a[aria-current="page"] { background: var(--ink); color: var(--on-ink) !important; }
 .my-tabs .count { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: inline-grid; place-items: center; font-size: .7rem; font-style: normal; font-weight: 750; background: var(--surface-3); color: var(--ink); }
 
-.store-foot { max-width: 1100px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px) 40px; text-align: center; font-size: .8rem; }
-.store-foot a { color: var(--muted); }

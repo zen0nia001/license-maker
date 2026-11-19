@@ -79,9 +79,6 @@ export const StorePage: React.FC<{ app: string | null }> = ({ app }) => {
           </>
         )}
       </main>
-      <footer className="store-foot">
-        <a href={href.owner}>Owner sign in</a>
-      </footer>
     </>
   );
 };

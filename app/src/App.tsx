@@ -39,9 +39,12 @@ export const App: React.FC = () => {
   const [mini, setMini] = useState(readMini);
   const [open, setOpen] = useState(false);
 
-  // The bare address is the front door: the owner's home only on the owner's device (signed in once, or the signing
-  // key is here); a client's device opens their own area, anyone else the store. #/owner always opens the owner's home.
-  const visitorAtFront = route.page === 'home' && !route.owner && !control.signedIn && !signing.hasKey && !isOwnerDevice();
+  // The owner's pages are private: they show only on the owner's device (signed in once, or the signing key is here).
+  // On any other device every owner page (the bare address too) opens the client's own area, or the public store, so
+  // clients never see the owner's sign-in. Only #/owner (a private address the owner keeps) and an add-device link
+  // open it anywhere.
+  const isOwnerRoute = route.page !== 'store' && route.page !== 'join' && route.page !== 'my';
+  const visitorAtFront = isOwnerRoute && !(route.page === 'home' && route.owner) && route.page !== 'addDevice' && !control.signedIn && !signing.hasKey && !isOwnerDevice();
 
   // The owner's pages are "Control Center" (the store and the client pages set their own title).
   const ownerPage = route.page !== 'store' && route.page !== 'join' && route.page !== 'my' && !visitorAtFront;
