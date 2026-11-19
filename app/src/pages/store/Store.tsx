@@ -111,7 +111,7 @@ export const StoreAppDetail: React.FC<{ app: Listing; store: StoreDetails | null
       {/* On the public store only (not in the owner's listing preview). */}
       {store && (
         <div className="inquiry">
-          <InquiryForm product={app.id} appName={app.name} />
+          <InquiryForm product={app.id} appName={app.name} download={app.download === true} />
           {(store.messenger || store.mobile) && (
             <div className="row" style={{ alignItems: 'center' }}>
               <span className="small muted" style={{ flex: '0 0 auto' }}>Or reach us directly:</span>

@@ -11,13 +11,24 @@ export type Listing = {
   priceMonthly: string | null;
   priceYearly: string | null;
   features: string[];
+  /** The store form gives a download link at once (the owner's Instant download, and an installer). Public store only. */
+  download?: boolean;
 };
 
 /** An app as the owner sees it: its listing, and what Control knows of it (ownerView). */
 export type Product = Listing & { licensePrefix: string; imageRepo: string | null; published: boolean; sort: number };
 
 /** The store's own details (Control: storeView). */
-export type StoreDetails = { name: string | null; about: string | null; messenger: string | null; mobile: string | null };
+export type StoreDetails = {
+  name: string | null;
+  about: string | null;
+  messenger: string | null;
+  mobile: string | null;
+  /** Control sends eligible free trials by itself (the owner's only: ownerStoreView). */
+  autoTrial?: boolean;
+  /** The store form gives a download link at once. */
+  instantDownload?: boolean;
+};
 
 export type Alert = 'silent' | 'license_locked' | 'license_ending' | 'backup_old' | 'disk_low' | 'moved' | 'clone_suspected';
 
@@ -56,6 +67,8 @@ export type LicenseRequest = {
   createdAt: string;
   decidedAt: string | null;
   deliveredAt: string | null;
+  /** Control decided it by itself: a free trial sent, or refused as already used. */
+  auto?: boolean;
   currentLicense: { state: string; plan: string | null; expiresAt: string | null } | null;
 };
 

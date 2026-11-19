@@ -69,9 +69,9 @@ export const RequestDetail: React.FC<{ request: LicenseRequest }> = ({ request: 
     await control.reload();
   };
 
-  if (r.status === 'approved') return <Chip tone="warn">Key sent: the app picks it up within a minute</Chip>;
-  if (r.status === 'delivered') return <Chip tone="ok">Delivered {ago(r.deliveredAt)}</Chip>;
-  if (r.status === 'declined') return <Chip tone="bad">Declined{r.note ? `: ${r.note}` : ''}</Chip>;
+  if (r.status === 'approved') return <Chip tone="warn">{r.auto ? 'Trial key sent by itself' : 'Key sent'}: the app picks it up within a minute</Chip>;
+  if (r.status === 'delivered') return <Chip tone="ok">Delivered {ago(r.deliveredAt)}{r.auto ? ', sent by itself' : ''}</Chip>;
+  if (r.status === 'declined') return <Chip tone="bad">{r.auto ? 'Refused by itself' : 'Declined'}{r.note ? `: ${r.note}` : ''}</Chip>;
   return (
     <div className="detail">
       {!signing.unlocked && <Msg tone="warn">Unlock the signing key (<a href={href.settings}>Settings</a>, or the key button) to approve.</Msg>}

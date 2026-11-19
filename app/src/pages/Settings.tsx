@@ -296,6 +296,43 @@ const PasswordSection: React.FC<{ hasPasskey: boolean }> = ({ hasPasskey }) => {
   );
 };
 
+/** What Control does by itself: free trials, and the installer straight from the store form. Saved as you switch. */
+const AutoSwitches: React.FC<{ store: StoreDetails; onChange: (s: StoreDetails) => void }> = ({ store, onChange }) => {
+  const [error, setError] = useState<string | null>(null);
+  const flip = async (key: 'autoTrial' | 'instantDownload', on: boolean) => {
+    setError(null);
+    try {
+      onChange(await api<StoreDetails>('PUT', '/owner/store', { ...store, [key]: on }));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+  return (
+    <div className="stack" style={{ gap: 10, marginTop: 8, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
+      <b>Automatic</b>
+      <label className="row" style={{ alignItems: 'flex-start', gap: 10 }}>
+        <input type="checkbox" checked={store.autoTrial !== false} onChange={(e) => void flip('autoTrial', e.target.checked)} style={{ width: 'auto', flex: 'none', marginTop: 4 }} />
+        <span>
+          Send free trials by themselves
+          <span className="small muted" style={{ display: 'block' }}>
+            A business that never had one gets its 3-day trial key in a minute, with nothing for you to do; one whose trial is still running gets it again. A business that already had a trial or a license is told to choose a plan. Paid plans always wait for you.
+          </span>
+        </span>
+      </label>
+      <label className="row" style={{ alignItems: 'flex-start', gap: 10 }}>
+        <input type="checkbox" checked={store.instantDownload === true} onChange={(e) => void flip('instantDownload', e.target.checked)} style={{ width: 'auto', flex: 'none', marginTop: 4 }} />
+        <span>
+          Installer right after the store form
+          <span className="small muted" style={{ display: 'block' }}>
+            Whoever sends the form on an app's page gets a private download link at once, and the installation that follows is linked to them as a client by itself. Anyone can fill in the form, so the installer must only hold a download key that can read your app images and nothing else.
+          </span>
+        </span>
+      </label>
+      {error && <Msg>{error}</Msg>}
+    </div>
+  );
+};
+
 /** The public store's own details: its name, a line about it, and how clients reach you (Messenger, a text). */
 const StoreCard: React.FC = () => {
   const control = useControl();
@@ -318,6 +355,7 @@ const StoreCard: React.FC = () => {
       <p className="small muted">Shown on the store, so clients can message you about an app.</p>
       {saved && <Msg tone="ok">Saved.</Msg>}
       <ActionButton className="primary" onClick={async () => { setStore(await api<StoreDetails>('PUT', '/owner/store', store)); setSaved(true); }}>Save store details</ActionButton>
+      <AutoSwitches store={store} onChange={setStore} />
     </Card>
   );
 };
