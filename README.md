@@ -38,6 +38,9 @@ GitHub Pages address forwards there; a phone set up there needs **Settings → S
   note), ready to invite; if one with that contact exists, **Open client** instead.
 - **Owner sign-in**: your passkey, or your **password** (the fallback; a seeded one must be changed at once). On a
   new phone or laptop: **Settings → Add another device → Make link**, open the link there (`#/add-device/…`).
+- **Installers**: **Apps → the app → Installer** to upload it once (POS-Setup.exe, SPX-client.zip). **Send installer** on
+  a store inquiry or a client's page makes a private download link (7 days, 3 downloads) with a ready message;
+  clients can also **Download installer** from their own page. Never on the public store (it holds the download key).
 - **Check a key**: is a key genuine, for whom, until when.
 - **Settings**: the signing key (set up from the locked backup code or the key file, unlock, locked backup code,
   remove), the payment details written into every key, and Control (passkeys, notifications, sign out).

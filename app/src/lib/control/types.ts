@@ -98,6 +98,27 @@ export type ClientDetail = Client & {
   passkeyList: { id: string; name: string; deviceType: string | null; createdAt: string; lastUsedAt: string | null }[];
 };
 
+/** An app's installer, uploaded once by the owner (Control: src/installers/routes.ts). */
+export type Installer = { product: string; filename: string; size: number; sha256: string; uploadedAt: string };
+
+/** A private download link for an installer (7 days, a few downloads). */
+export type DownloadLink = {
+  id: string;
+  product: { id: string; name: string };
+  clientId: string | null;
+  inquiryId: string | null;
+  label: string | null;
+  createdAt: string;
+  expiresAt: string;
+  maxDownloads: number;
+  downloads: number;
+  lastDownloadAt: string | null;
+  status: 'active' | 'used' | 'expired' | 'cancelled';
+};
+
+/** An installer a client can download from their own page. */
+export type MyInstaller = { product: { id: string; name: string }; filename: string; size: number; sha256: string; uploadedAt: string };
+
 /** One message between the owner and a client (C2). */
 export type Message = { id: string; from: 'client' | 'owner'; body: string; createdAt: string; readAt: string | null };
 

@@ -11,11 +11,12 @@ import { Installs } from './Installs';
 import { Requests } from './Requests';
 import { Keys } from './Keys';
 import { Listing } from './Listing';
+import { InstallerTab } from './Installer';
 import { AppIcon } from '../../components/AppIcon';
 
 export type TabProps = { product: Product; stats: AppStats; query: URLSearchParams };
 
-const LABELS: Record<Tab, string> = { overview: 'Overview', installs: 'Installations', requests: 'Requests', keys: 'Keys', listing: 'Store listing' };
+const LABELS: Record<Tab, string> = { overview: 'Overview', installs: 'Installations', requests: 'Requests', keys: 'Keys', listing: 'Store listing', installer: 'Installer' };
 
 /** One app: its header, then Overview · Installations · Requests · Keys. */
 export const AppPage: React.FC<{ app: string; tab: Tab; query: URLSearchParams }> = ({ app, tab, query }) => {
@@ -55,6 +56,7 @@ export const AppPage: React.FC<{ app: string; tab: Tab; query: URLSearchParams }
       {tab === 'requests' && <NeedsControl><Requests {...props} /></NeedsControl>}
       {tab === 'keys' && <Keys {...props} />}
       {tab === 'listing' && <NeedsControl><Listing key={product.id} {...props} /></NeedsControl>}
+      {tab === 'installer' && <NeedsControl><InstallerTab key={product.id} {...props} /></NeedsControl>}
     </>
   );
 };

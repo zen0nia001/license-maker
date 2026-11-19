@@ -1,7 +1,7 @@
 // One client, for the owner (C3): their details, sign-in (invite link, passkeys, on/off), installations and messages.
 import React, { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/control/api';
-import type { ClientDetail, Message } from '../lib/control/types';
+import type { ClientDetail, DownloadLink, Message } from '../lib/control/types';
 import { ago, day, plural } from '../lib/format';
 import { go, href } from '../router';
 import { useControl } from '../state/control';
@@ -9,6 +9,7 @@ import { Icon } from '../components/Icon';
 import { Thread } from '../components/Thread';
 import { ActionButton, Card, Chip, CopyButton, Empty, Field, Msg, PageHead, Say, Segmented } from '../components/ui';
 import { NeedsControl } from './app/AppPage';
+import { SendInstaller } from '../components/SendInstaller';
 import { accessChip, clientNameOf, CONTACT_KINDS, licenseChip, type ContactKind } from './Clients';
 
 export const ClientPage: React.FC<{ id: string }> = ({ id }) => (
@@ -91,11 +92,49 @@ const ClientView: React.FC<{ id: string }> = ({ id }) => {
         </Card>
         <div className="stack">
           <Access client={client} base={base} onChange={refresh} />
+          <InstallerLinks client={client} />
           <Installs client={client} onChange={refresh} />
           <Details client={client} base={base} onChange={refresh} />
         </div>
       </div>
     </>
+  );
+};
+
+/** Send the client an app's installer (a private link, 7 days, 3 downloads) and see whether they downloaded it. */
+const InstallerLinks: React.FC<{ client: ClientDetail }> = ({ client }) => {
+  const [links, setLinks] = useState<DownloadLink[]>([]);
+  const load = useCallback(async () => {
+    setLinks(await api<DownloadLink[]>('GET', `/owner/download-links?clientId=${encodeURIComponent(client.id)}`));
+  }, [client.id]);
+  useEffect(() => {
+    void load().catch(() => undefined);
+  }, [load]);
+  const stop = async (l: DownloadLink) => {
+    await api('DELETE', `/owner/download-links/${encodeURIComponent(l.id)}`);
+    await load();
+  };
+  const STATUS: Record<DownloadLink['status'], string> = { active: 'Waiting', used: 'Used up', expired: 'Expired', cancelled: 'Stopped' };
+  return (
+    <Card title="Installer">
+      <div className="stack" style={{ gap: 10 }}>
+        <SendInstaller clientId={client.id} name={client.name} contactKind={client.contactKind} contact={client.contact} productId={client.installationList[0]?.product.id} onMade={() => void load()} />
+        {links.length > 0 && (
+          <ul className="list">
+            {links.slice(0, 5).map((l) => (
+              <li key={l.id}>
+                <div className="who">{l.product.name} · {l.downloads}/{l.maxDownloads} downloaded</div>
+                <div className="meta">made {day(l.createdAt)}{l.lastDownloadAt ? ` · last download ${ago(l.lastDownloadAt)}` : ''} · until {day(l.expiresAt)}</div>
+                <div className="acts">
+                  <Chip tone={l.status === 'active' ? 'warn' : l.downloads > 0 ? 'ok' : 'info'}>{l.downloads > 0 && l.status !== 'active' ? 'Downloaded' : STATUS[l.status]}</Chip>
+                  {l.status === 'active' && <ActionButton className="small" onClick={() => stop(l)}>Stop</ActionButton>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </Card>
   );
 };
 

@@ -115,6 +115,37 @@ export async function api<T>(method: string, path: string, body?: unknown): Prom
   return answer<T>(res);
 }
 
+/** Uploads a file as the request body (the owner's installers: PUT /owner/installers/:app?name=…). */
+export async function apiUpload<T>(path: string, file: Blob): Promise<T> {
+  if (!CONTROL_URL) throw new Error('Control is not set up for this address.');
+  let res: Response;
+  try {
+    res = await fetch(CONTROL_URL + path, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/octet-stream', ...(memory ? { Authorization: `Bearer ${memory.token}` } : {}) },
+      body: file,
+      cache: 'no-store',
+    });
+  } catch {
+    throw new Error("Control can't be reached. Check the internet connection.");
+  }
+  return answer<T>(res);
+}
+
+/** Downloads a file as the signed-in client and saves it on this device (their installers). */
+export async function clientDownload(path: string, filename: string): Promise<void> {
+  const res = await request('GET', path, undefined, clientMemory?.token);
+  if (!res.ok) await answer(res);
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
+}
+
 /** A call as the signed-in client (/client/…). Never sends the owner's token. */
 export async function clientApi<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await request(method, path, body, clientMemory?.token);

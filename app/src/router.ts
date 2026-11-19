@@ -1,7 +1,7 @@
 // Pages by the URL's hash (#/app/spx/keys): one static file, no path rewriting needed.
 import { useSyncExternalStore } from 'react';
 
-export const TABS = ['overview', 'installs', 'requests', 'keys', 'listing'] as const;
+export const TABS = ['overview', 'installs', 'requests', 'keys', 'listing', 'installer'] as const;
 export type Tab = (typeof TABS)[number];
 
 /** The client's own area (C3), apart from the owner's: #/my, #/my/licenses, #/my/messages. */

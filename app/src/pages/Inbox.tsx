@@ -8,6 +8,7 @@ import { useSigning } from '../state/signing';
 import { Icon } from '../components/Icon';
 import { ActionButton, Card, Chip, Empty, Msg, PageHead, Tag } from '../components/ui';
 import { NeedsControl } from './app/AppPage';
+import { SendInstaller } from '../components/SendInstaller';
 import { RequestRow } from './app/Requests';
 
 const WEEK = 7 * 24 * 3600e3;
@@ -57,6 +58,7 @@ const Inquiries: React.FC = () => {
 const InquiryRow: React.FC<{ inquiry: Inquiry }> = ({ inquiry: q }) => {
   const control = useControl();
   const reply = replyLink(q);
+  const [sending, setSending] = useState(false);
   const setStatus = async (status: 'new' | 'done') => {
     await api('PATCH', `/owner/inquiries/${encodeURIComponent(q.id)}`, { status });
     await control.reload();
@@ -87,12 +89,14 @@ const InquiryRow: React.FC<{ inquiry: Inquiry }> = ({ inquiry: q }) => {
           {existing
             ? <a className="button" style={{ flex: '0 0 auto' }} href={href.client(existing.id)}>Open client</a>
             : <div style={{ flex: '0 0 auto' }}><ActionButton onClick={makeClient}>Make a client</ActionButton></div>}
+          <button style={{ flex: '0 0 auto' }} aria-expanded={sending} onClick={() => setSending(!sending)}>Send installer</button>
           <span style={{ flex: '1 1 auto' }} />
           {q.status === 'new'
             ? <div style={{ flex: '0 0 auto' }}><ActionButton className="small" onClick={() => setStatus('done')}>Mark done</ActionButton></div>
             : <div style={{ flex: '0 0 auto' }}><Chip tone="ok">Done {ago(q.handledAt)}</Chip> <ActionButton className="small" onClick={() => setStatus('new')}>Reopen</ActionButton></div>}
           <div style={{ flex: '0 0 auto' }}><ActionButton className="small" onClick={remove}>Delete</ActionButton></div>
         </div>
+        {sending && <SendInstaller productId={q.product?.id} inquiryId={q.id} name={q.name} contactKind={q.contactKind} contact={q.contact} />}
       </div>
     </li>
   );

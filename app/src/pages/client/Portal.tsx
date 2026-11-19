@@ -2,9 +2,9 @@
 // licenses and keys, renewals, and messages with their provider. Its own simple page, like the store: none of the
 // owner's menus, nothing of the owner's session, and never the signing key.
 import React, { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-import { clientApi, CONTROL_URL, currentClientSession, onClientSession } from '../../lib/control/api';
+import { clientApi, clientDownload, CONTROL_URL, currentClientSession, onClientSession } from '../../lib/control/api';
 import { clientSignIn, clientSignOut, joinWithInvite, passkeyError, readInvite, type InviteInfo } from '../../lib/control/passkey';
-import type { Message, MyInstallation, MyRequest } from '../../lib/control/types';
+import type { Message, MyInstallation, MyInstaller, MyRequest } from '../../lib/control/types';
 import { ago, day, gb, plural } from '../../lib/format';
 import { go, href, type MyTab } from '../../router';
 import { Icon, Logo } from '../../components/Icon';
@@ -124,7 +124,7 @@ const SignIn: React.FC = () => {
   );
 };
 
-type Data = { installs: MyInstallation[]; requests: MyRequest[]; messages: Message[]; unread: number };
+type Data = { installs: MyInstallation[]; requests: MyRequest[]; installers: MyInstaller[]; messages: Message[]; unread: number };
 
 const MyArea: React.FC<{ tab: MyTab; name: string }> = ({ tab, name }) => {
   const [data, setData] = useState<Data | null>(null);
@@ -133,13 +133,14 @@ const MyArea: React.FC<{ tab: MyTab; name: string }> = ({ tab, name }) => {
   const load = useCallback(async () => {
     try {
       // Messages are fetched (and so marked read) only on the Messages page.
-      const [me, installs, requests, messages] = await Promise.all([
+      const [me, installs, requests, installers, messages] = await Promise.all([
         clientApi<{ unreadMessages: number }>('GET', '/client/me'),
         clientApi<MyInstallation[]>('GET', '/client/installations'),
         clientApi<MyRequest[]>('GET', '/client/license-requests'),
+        clientApi<MyInstaller[]>('GET', '/client/installers'),
         tab === 'messages' ? clientApi<Message[]>('GET', '/client/messages') : Promise.resolve(null),
       ]);
-      setData((d) => ({ installs, requests, messages: messages ?? d?.messages ?? [], unread: tab === 'messages' ? 0 : me.unreadMessages }));
+      setData((d) => ({ installs, requests, installers, messages: messages ?? d?.messages ?? [], unread: tab === 'messages' ? 0 : me.unreadMessages }));
       setError(null);
     } catch (e) {
       setError((e as Error).message);
@@ -164,7 +165,7 @@ const MyArea: React.FC<{ tab: MyTab; name: string }> = ({ tab, name }) => {
     <Frame name={name} tab={tab} unread={data?.unread}>
       <Say text={error} />
       {!data && !error && <div className="card"><p className="muted">Loading…</p></div>}
-      {data && tab === 'home' && <MyInstalls installs={data.installs} onChange={load} />}
+      {data && tab === 'home' && <MyInstalls installs={data.installs} installers={data.installers} onChange={load} />}
       {data && tab === 'licenses' && <MyLicenses requests={data.requests} />}
       {data && tab === 'messages' && (
         <Card title="Messages with your provider">
@@ -212,14 +213,14 @@ const REQUEST_TEXT: Record<string, string> = {
   delivered: 'Done',
 };
 
-const MyInstalls: React.FC<{ installs: MyInstallation[]; onChange: () => Promise<void> }> = ({ installs, onChange }) => {
+const MyInstalls: React.FC<{ installs: MyInstallation[]; installers: MyInstaller[]; onChange: () => Promise<void> }> = ({ installs, installers, onChange }) => {
   if (installs.length === 0) {
     return <Card><Empty icon={<Icon name="apps" size={30} />}>Nothing here yet. Your provider links your installations to your page.</Empty></Card>;
   }
-  return <>{installs.map((i) => <MyInstall key={i.id} install={i} onChange={onChange} />)}</>;
+  return <>{installs.map((i) => <MyInstall key={i.id} install={i} installer={installers.find((x) => x.product.id === i.product.id) ?? null} onChange={onChange} />)}</>;
 };
 
-const MyInstall: React.FC<{ install: MyInstallation; onChange: () => Promise<void> }> = ({ install: i, onChange }) => {
+const MyInstall: React.FC<{ install: MyInstallation; installer: MyInstaller | null; onChange: () => Promise<void> }> = ({ install: i, installer, onChange }) => {
   const [renewing, setRenewing] = useState(false);
   const chip = stateChip(i);
   const waiting = i.request?.status === 'pending' || i.request?.status === 'approved';
@@ -243,6 +244,12 @@ const MyInstall: React.FC<{ install: MyInstallation; onChange: () => Promise<voi
           !waiting || i.request?.status === 'pending' ? (
             <div><button className={i.alerts.includes('license_ending') || i.alerts.includes('license_locked') ? 'primary' : undefined} onClick={() => setRenewing(true)}>{i.request?.status === 'pending' ? 'Change my request' : 'Renew or get a license'}</button></div>
           ) : null
+        )}
+        {installer && (
+          <div className="row" style={{ alignItems: 'center' }}>
+            <span className="small muted" style={{ flex: '1 1 200px' }}>Reinstalling, or a new computer? {installer.filename}, {Math.max(1, Math.round(installer.size / 1024))} KB.</span>
+            <div style={{ flex: '0 0 auto' }}><ActionButton className="small" onClick={() => clientDownload(`/client/installers/${encodeURIComponent(i.product.id)}/file`, installer.filename)}>Download installer</ActionButton></div>
+          </div>
         )}
       </div>
     </Card>
