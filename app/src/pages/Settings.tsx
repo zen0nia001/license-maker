@@ -123,7 +123,7 @@ const PaymentCard: React.FC = () => {
   const p = signing.payment;
   return (
     <Card title="Payment details on every key">
-      <p className="small muted">Shown in the apps on the trial and renewal notices and the license screen. Kept on this device.</p>
+      <p className="small muted">Shown in the apps on the trial and renewal notices and the license screen. Kept on this device. Automatic trial keys use Your store → How to pay.</p>
       <Field label="How the client pays you" hint="One item per line, e.g. GCash: 0917 000 0000 (Juan D.)">
         <textarea value={p.pay} maxLength={500} spellCheck={false} onChange={(e) => signing.setPayment({ ...p, pay: e.target.value })} placeholder={'GCash: 0917 000 0000 (Juan D.)\nBDO: 0000 0000 0000'} />
       </Field>
@@ -296,6 +296,22 @@ const PasswordSection: React.FC<{ hasPasskey: boolean }> = ({ hasPasskey }) => {
   );
 };
 
+/** "How to pay" on the automatic trial keys: the client's trial notice and "I've paid" show it. The keys made on this
+ *  phone use its own "Payment details on every key"; one tap copies those here. */
+const TrialPayment: React.FC<{ store: StoreDetails; onChange: (payment: string) => void }> = ({ store, onChange }) => {
+  const signing = useSigning();
+  const mine = signing.payment;
+  const phone = mine.pay.trim();
+  return (
+    <Field label="How to pay (on automatic trial keys)" hint="One item per line, e.g. GCash: 0917 000 0000 (Juan D.). Save store details after.">
+      <textarea value={store.payment ?? ''} maxLength={500} spellCheck={false} onChange={(e) => onChange(e.target.value)} placeholder={'GCash: 0917 000 0000 (Juan D.)\nBDO: 0000 0000 0000'} />
+      {phone && phone !== (store.payment ?? '').trim() && (
+        <button type="button" className="small" style={{ marginTop: 6 }} onClick={() => onChange(mine.pay)}>Use this phone's payment details</button>
+      )}
+    </Field>
+  );
+};
+
 /** What Control does by itself: free trials, and the installer straight from the store form. Saved as you switch. */
 const AutoSwitches: React.FC<{ store: StoreDetails; onChange: (s: StoreDetails) => void }> = ({ store, onChange }) => {
   const [error, setError] = useState<string | null>(null);
@@ -352,7 +368,8 @@ const StoreCard: React.FC = () => {
         <Field label="Messenger username"><input value={store.messenger ?? ''} onChange={(e) => set('messenger', e.target.value)} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="m.me/juan.delacruz" /></Field>
         <Field label="Mobile (for texts)"><input value={store.mobile ?? ''} inputMode="tel" onChange={(e) => set('mobile', e.target.value)} autoComplete="off" placeholder="0917 000 0000" /></Field>
       </div>
-      <p className="small muted">Shown on the store, so clients can message you about an app.</p>
+      <p className="small muted">Shown on the store, so clients can message you about an app. Automatic trial keys carry them too, for the client's "I've paid".</p>
+      <TrialPayment store={store} onChange={(payment) => set('payment', payment)} />
       {saved && <Msg tone="ok">Saved.</Msg>}
       <ActionButton className="primary" onClick={async () => { setStore(await api<StoreDetails>('PUT', '/owner/store', store)); setSaved(true); }}>Save store details</ActionButton>
       <AutoSwitches store={store} onChange={setStore} />

@@ -153,7 +153,7 @@ const oneLine = (text: string) => {
 
 function requestSub(r: LicenseRequest): string {
   const plan = PLAN_LABELS[r.plan];
-  if (r.status === 'pending') return r.plan === 'trial' ? 'Asks for a free trial' : `${plan}${r.paymentReference ? ` · paid, ref ${r.paymentReference}` : ''}`;
+  if (r.status === 'pending') return r.plan === 'trial' ? 'Asks for a free trial' : `I've paid for ${plan.toLowerCase()}${r.paymentReference ? ` · ref ${r.paymentReference}` : ''}`;
   if (r.status === 'approved') return `${plan} · ${r.auto ? 'sent by itself' : 'key sent'}, the app picks it up`;
   if (r.status === 'delivered') return `${plan} · delivered${r.auto ? ', sent by itself' : ''}`;
   if (r.auto) return `${plan} · refused by itself: already had a trial or a license`;

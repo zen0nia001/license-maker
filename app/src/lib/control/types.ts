@@ -24,6 +24,8 @@ export type StoreDetails = {
   about: string | null;
   messenger: string | null;
   mobile: string | null;
+  /** How clients pay you, written into the automatic trial keys (the owner's only). One item per line. */
+  payment?: string | null;
   /** Control sends eligible free trials by itself (the owner's only: ownerStoreView). */
   autoTrial?: boolean;
   /** The store form gives a download link at once. */

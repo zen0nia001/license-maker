@@ -2,10 +2,7 @@
 // locked again after 10 minutes in the background. Everything that makes a key goes through here; nothing else
 // ever sees the private key, and it never goes near the network (only finished keys do).
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import {
-  addDays, addMonths, backupCodeOf, boxOfBackupCode, importPrivateKey, importPublicKey, lastDayOf, makeLicense, openText, planEnd, sealText, storeToday,
-  type LicensePayload, type LockedBox, type Plan, type ProductCode,
-} from '../lib/license/core';
+import { addMonths, backupCodeOf, boxOfBackupCode, importPrivateKey, importPublicKey, makeLicense, openText, sealText, storeToday, type LicensePayload, type LockedBox, type Plan, type ProductCode, requestPeriod } from '../lib/license/core';
 import { KEYS, store, type IssuedKey } from '../lib/storage';
 
 export type PaymentDetails = { pay: string; msgr: string; tel: string };
@@ -154,10 +151,8 @@ export const SigningProvider: React.FC<{ children: React.ReactNode }> = ({ child
       },
       make,
       async makeForRequest({ product, installationId, customer, plan, currentExpiresAt }) {
-        const today = storeToday();
-        const afterCurrent = currentExpiresAt ? addDays(lastDayOf(currentExpiresAt), 1) : null;
-        const start = plan !== 'trial' && afterCurrent && afterCurrent > today ? afterCurrent : today;
-        return (await make({ product, installationId, customer, lastDay: planEnd(plan, start), plan })).license;
+        const { lastDay } = requestPeriod(plan, currentExpiresAt);
+        return (await make({ product, installationId, customer, lastDay, plan })).license;
       },
     };
   }, [box, privateKey, publicKey, unsupported, payment, issued, keep]);

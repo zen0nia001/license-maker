@@ -217,4 +217,13 @@ export function planEnd(plan: Plan, start: string): string {
   return addDays(addMonths(start, plan === 'monthly' ? 1 : 12), -1);
 }
 
+/** The days a key for a request runs: a trial from today; a paid plan from today, or from the day after the license
+ *  it has now ends (a renewal before the end loses no days). Both 'yyyy-mm-dd', the last day counting. */
+export function requestPeriod(plan: Plan, currentExpiresAt: string | null): { start: string; lastDay: string } {
+  const today = storeToday();
+  const afterCurrent = currentExpiresAt ? addDays(lastDayOf(currentExpiresAt), 1) : null;
+  const start = plan !== 'trial' && afterCurrent && afterCurrent > today ? afterCurrent : today;
+  return { start, lastDay: planEnd(plan, start) };
+}
+
 export const fmtDay = (day: string) => new Date(day + 'T12:00:00Z').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });

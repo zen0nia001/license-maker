@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { codeOf } from '../../lib/apps';
 import { api } from '../../lib/control/api';
 import type { LicenseRequest } from '../../lib/control/types';
-import { PLAN_LABELS } from '../../lib/license/core';
+import { fmtDay, PLAN_LABELS, requestPeriod } from '../../lib/license/core';
+import { isAmount, peso } from '../../lib/price';
 import { ago } from '../../lib/format';
 import { href } from '../../router';
 import { useControl } from '../../state/control';
@@ -38,6 +39,23 @@ export const RequestRow: React.FC<{ request: LicenseRequest; showApp?: boolean }
     <div className="wide"><RequestDetail request={r} /></div>
   </li>
 );
+
+/** "I've paid": the plan they chose, its price on your store, the reference to look for, and the days the key will run. */
+const PaidFor: React.FC<{ request: LicenseRequest }> = ({ request: r }) => {
+  const control = useControl();
+  const product = control.products.find((p) => p.id === r.product.id);
+  const raw = r.plan === 'yearly' ? product?.priceYearly : product?.priceMonthly;
+  const price = peso(raw);
+  const { start, lastDay } = requestPeriod(r.plan, r.currentLicense?.expiresAt ?? null);
+  return (
+    <div className="paid-for">
+      <div><span className="small muted">Paid for</span><b>{PLAN_LABELS[r.plan]}{price && <> · {price}{isAmount(raw) && <small> / {r.plan === 'yearly' ? 'year' : 'month'}</small>}</>}</b></div>
+      <div><span className="small muted">Payment reference</span><b className="mono">{r.paymentReference}</b></div>
+      <div><span className="small muted">The key will run</span><b>{fmtDay(start)} to {fmtDay(lastDay)}</b></div>
+      <p className="small muted" style={{ margin: 0 }}>Check that {price ?? 'the payment'} arrived with this reference before you send the key.</p>
+    </div>
+  );
+};
 
 /** Who a request is from, as the owner knows them. */
 export const requestName = (r: LicenseRequest) => r.installation.label || r.installation.customer || r.installation.installationId || r.installation.id;
@@ -75,12 +93,12 @@ export const RequestDetail: React.FC<{ request: LicenseRequest }> = ({ request: 
   return (
     <div className="detail">
       {!signing.unlocked && <Msg tone="warn">Unlock the signing key (<a href={href.settings}>Settings</a>, or the key button) to approve.</Msg>}
-      {r.plan !== 'trial' && <p className="small muted">Check that payment {r.paymentReference} arrived before you send the key.</p>}
+      {r.plan !== 'trial' && <PaidFor request={r} />}
       <Field label="Licensed to (on the key)">
         <input value={customer} onChange={(e) => setCustomer(e.target.value)} maxLength={80} autoComplete="off" />
       </Field>
       <ActionButton className="primary" onClick={approve} busyLabel="Signing and sending…">
-        {r.plan === 'trial' ? 'Approve trial & send key' : 'Payment received: send key'}
+        {r.plan === 'trial' ? 'Approve trial & send key' : `Payment received: send ${PLAN_LABELS[r.plan].toLowerCase()} key`}
       </ActionButton>
       <Field label="Or decline (the client sees the reason)">
         <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} autoComplete="off" placeholder="Reason (optional)" />
