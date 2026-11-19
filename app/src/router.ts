@@ -27,7 +27,9 @@ export type Route =
   /** A client's one-time invite link (#/join/<token>): set up their passkey. */
   | { page: 'join'; token: string }
   /** The client's own area, behind their passkey. */
-  | { page: 'my'; tab: MyTab };
+  | { page: 'my'; tab: MyTab }
+  /** How it works, for clients: public like the store. */
+  | { page: 'guide' };
 
 export function parse(hash: string): Route {
   const [path = '', search = ''] = hash.replace(/^#/, '').split('?');
@@ -37,6 +39,7 @@ export function parse(hash: string): Route {
     return { page: 'app', app: decodeURIComponent(parts[1]), tab, query: new URLSearchParams(search) };
   }
   if (parts[0] === 'owner') return { page: 'home', owner: true };
+  if (parts[0] === 'guide') return { page: 'guide' };
   if (parts[0] === 'store') return { page: 'store', app: parts[1] ? decodeURIComponent(parts[1]) : null };
   if (parts[0] === 'add-device' && parts[1]) return { page: 'addDevice', token: parts[1] };
   if (parts[0] === 'add') return { page: 'add' };
@@ -64,6 +67,7 @@ export const href = {
   my: (tab: MyTab = 'home') => (tab === 'home' ? '#/my' : `#/my/${tab}`),
   apps: '#/apps',
   inbox: '#/inbox',
+  guide: '#/guide',
   store: (id?: string) => (id ? `#/store/${encodeURIComponent(id)}` : '#/store'),
   app: (id: string, tab: Tab = 'overview', query?: Record<string, string>) =>
     `#/app/${encodeURIComponent(id)}${tab === 'overview' ? '' : `/${tab}`}${query ? `?${new URLSearchParams(query)}` : ''}`,

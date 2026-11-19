@@ -11,7 +11,7 @@ import { isAmount, peso } from '../../lib/price';
 type StoreData = { store: StoreDetails; apps: Listing[] };
 
 /** The public store: no sign-in, no session sent (Control's /store is public and read only). */
-async function loadStore(): Promise<StoreData> {
+export async function loadStore(): Promise<StoreData> {
   if (!CONTROL_URL) throw new Error("The store isn't open yet.");
   let res: Response;
   try {
@@ -42,7 +42,10 @@ export const StorePage: React.FC<{ app: string | null }> = ({ app }) => {
       <header className="store-top">
         <div className="store-bar">
           <a className="store-brand" href={href.store()}><Logo size={30} /> {name}</a>
-          <a className="store-signin" href={href.my()}><Icon name="user" size={16} /> Client sign in</a>
+          <span className="store-links">
+            <a className="store-signin" href={href.guide}>How it works</a>
+            <a className="store-signin" href={href.my()}><Icon name="user" size={16} /> Client sign in</a>
+          </span>
         </div>
         <h1>{app ? one?.name ?? name : name}</h1>
         {!app && data?.store.about && <p>{data.store.about}</p>}
@@ -107,7 +110,7 @@ export const StoreAppDetail: React.FC<{ app: Listing; store: StoreDetails | null
         {app.priceMonthly && <div><span className="small muted">Monthly</span><b>{peso(app.priceMonthly)}{isAmount(app.priceMonthly) && <small> / month</small>}</b></div>}
         {app.priceYearly && <div><span className="small muted">Yearly</span><b>{peso(app.priceYearly)}{isAmount(app.priceYearly) && <small> / year</small>}</b></div>}
       </div>
-      <p className="small muted">Every app starts with a free trial: install it, then tap Ask my provider for a free trial on its license screen.</p>
+      <p className="small muted">Every app starts with a free trial: install it, then tap Ask my provider for a free trial on its license screen. <a href={href.guide}>How it works, step by step</a></p>
       {/* On the public store only (not in the owner's listing preview). */}
       {store && (
         <div className="inquiry">

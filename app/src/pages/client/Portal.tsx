@@ -22,7 +22,10 @@ const Frame: React.FC<{ name?: string; tab?: MyTab; unread?: number; children: R
   return (
     <>
       <header className="store-top">
-        <span className="store-brand"><Logo size={30} /> Your apps</span>
+        <div className="store-bar">
+          <span className="store-brand"><Logo size={30} /> Your apps</span>
+          <a className="store-signin" href={href.guide}>How it works</a>
+        </div>
         <h1>{name ? `Hi, ${name.split(' ')[0]}` : 'Your apps'}</h1>
         {name && (
           <nav className="my-tabs" aria-label="Your pages">

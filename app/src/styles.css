@@ -326,6 +326,18 @@ a.button.small { padding: 6px 12px; font-size: .85rem; }
 .store-top .store-bar .store-brand { margin-bottom: 0; }
 .store-signin { display: inline-flex; align-items: center; gap: 6px; font-size: .88rem; font-weight: 650; padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 999px; }
 .store-signin:hover { border-color: var(--ink); }
+.store-links { display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.guide { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.guide-step { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; }
+.guide-step h2 { font-size: 1.12rem; margin: 2px 0 6px; }
+.guide-step p { margin: 0; }
+.guide-step ul { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; color: var(--ink-2); }
+.guide-num { width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center; font-weight: 750; background: var(--ink); color: var(--on-ink); }
+.guide-note { margin-top: 10px !important; padding: 8px 12px; border-radius: 10px; background: var(--surface-2); color: var(--muted); font-size: .9rem; }
+.guide-help { display: grid; gap: 10px; }
+.guide-help h2 { font-size: 1.12rem; margin: 0; }
+.guide-help p { margin: 0; color: var(--muted); }
+@media (max-width: 520px) { .guide-step { gap: 12px; } .guide-num { width: 28px; height: 28px; font-size: .9rem; } }
 .my-tabs { display: flex; gap: 2px; margin-top: 18px; overflow-x: auto; }
 .my-tabs a { padding: 8px 14px; border-radius: 999px; font-weight: 650; color: var(--muted) !important; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .my-tabs a[aria-current="page"] { background: var(--ink); color: var(--on-ink) !important; }

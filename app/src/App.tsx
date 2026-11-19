@@ -16,6 +16,7 @@ import { AddApp } from './pages/AddApp';
 import { StorePage } from './pages/store/Store';
 import { ClientPage } from './pages/ClientPage';
 import { JoinPage, MyPage } from './pages/client/Portal';
+import { GuidePage } from './pages/client/Guide';
 import { AddDevice } from './pages/AddDevice';
 import { ChooseOwnPassword } from './components/ControlSignIn';
 
@@ -47,11 +48,11 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (viaPrivateAddress) markOwnerTab();
   }, [viaPrivateAddress]);
-  const isOwnerRoute = route.page !== 'store' && route.page !== 'join' && route.page !== 'my';
+  const isOwnerRoute = route.page !== 'store' && route.page !== 'join' && route.page !== 'my' && route.page !== 'guide';
   const visitorAtFront = isOwnerRoute && !viaPrivateAddress && !isOwnerTab() && !control.signedIn && !signing.hasKey && !isOwnerDevice();
 
   // The owner's pages are "Control Center" (the store and the client pages set their own title).
-  const ownerPage = route.page !== 'store' && route.page !== 'join' && route.page !== 'my' && !visitorAtFront;
+  const ownerPage = isOwnerRoute && !visitorAtFront;
   useEffect(() => {
     if (ownerPage) document.title = 'Control Center';
   }, [ownerPage]);
@@ -64,6 +65,7 @@ export const App: React.FC = () => {
   }, []);
 
   if (route.page === 'store') return <StorePage app={route.app} />;
+  if (route.page === 'guide') return <GuidePage />;
   // The client's side (their invite, their area): its own pages, none of the owner's.
   if (route.page === 'join') return <JoinPage key={route.token} token={route.token} />;
   if (route.page === 'my') return <MyPage tab={route.tab} />;
