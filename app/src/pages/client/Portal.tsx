@@ -3,7 +3,7 @@
 // owner's menus, nothing of the owner's session, and never the signing key.
 import React, { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { clientApi, clientDownload, CONTROL_URL, currentClientSession, onClientSession } from '../../lib/control/api';
-import { clientSignIn, clientSignOut, joinWithInvite, passkeyError, readInvite, type InviteInfo } from '../../lib/control/passkey';
+import { alreadyHasPasskey, clientSignIn, clientSignOut, joinWithInvite, passkeyError, readInvite, type InviteInfo } from '../../lib/control/passkey';
 import type { Message, MyInstallation, MyInstaller, MyRequest } from '../../lib/control/types';
 import { ago, day, gb, plural } from '../../lib/format';
 import { go, href, type MyTab } from '../../router';
@@ -45,6 +45,7 @@ export const JoinPage: React.FC<{ token: string }> = ({ token }) => {
   const [error, setError] = useState<string | null>(null);
   const [device, setDevice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [already, setAlready] = useState(false);
 
   useEffect(() => {
     if (!CONTROL_URL) {
@@ -61,7 +62,8 @@ export const JoinPage: React.FC<{ token: string }> = ({ token }) => {
       await joinWithInvite(token, device.trim() || 'Phone');
       go(href.my());
     } catch (e) {
-      setError(passkeyError(e, 'Setting up the passkey'));
+      if (alreadyHasPasskey(e)) setAlready(true);
+      else setError(passkeyError(e, 'Setting up the passkey'));
     } finally {
       setBusy(false);
     }
@@ -74,9 +76,16 @@ export const JoinPage: React.FC<{ token: string }> = ({ token }) => {
         {info && (
           <div className="stack">
             <p>Your provider made you a page for your apps{info.client.business ? ` at ${info.client.business}` : ''}: your installations, licenses, renewals, and messages with them.</p>
-            <p className="small muted">Set up a <b>passkey</b> on this phone: you'll sign in with your fingerprint, face or screen lock. No password to remember. This link works once.</p>
-            <Field label="This phone (optional)"><input value={device} onChange={(e) => setDevice(e.target.value)} placeholder="e.g. My phone" autoComplete="off" /></Field>
-            <button className="primary" disabled={busy} onClick={() => void join()}>{busy ? 'Setting up…' : 'Set up my passkey'}</button>
+            <p className="small muted">Set up a <b>passkey</b> on this phone or computer: you'll sign in with your fingerprint, face or screen lock. No password to remember. This link works once.</p>
+            <Field label="This device (optional)"><input value={device} onChange={(e) => setDevice(e.target.value)} placeholder="e.g. My phone, Shop laptop" autoComplete="off" /></Field>
+            {already ? (
+              <>
+                <Msg tone="info">This device already has your passkey (it came with your Google or Apple account), so there's nothing to set up. Just sign in with it.</Msg>
+                <ActionButton className="primary" onClick={async () => { await clientSignIn(); go(href.my()); }}>Sign in with passkey</ActionButton>
+              </>
+            ) : (
+              <button className="primary" disabled={busy} onClick={() => void join()}>{busy ? 'Setting up…' : 'Set up my passkey'}</button>
+            )}
           </div>
         )}
         <Say text={error} />
@@ -116,7 +125,8 @@ const SignIn: React.FC = () => {
           <p>Your installations, licenses and messages with your provider.</p>
           <button className="primary" disabled={busy} onClick={() => void run()}>{busy ? 'Signing in…' : 'Sign in with passkey'}</button>
           <Say text={error} />
-          <p className="small muted">First time? Open the invite link your provider sent you, on your phone.</p>
+          <p className="small muted">First time? Open the invite link your provider sent you.</p>
+          <p className="small muted">On another phone or computer? Your passkey may already be there (with your Google or Apple account): tap Sign in. If not, choose "Use a phone or tablet" in the window that opens and scan the code with your phone, or ask your provider for a new invite link for this device. If several passkeys are offered, pick the one with your name.</p>
           <a className="small" href={href.store()}><Icon name="left" size={14} /> The store</a>
         </div>
       </Card>

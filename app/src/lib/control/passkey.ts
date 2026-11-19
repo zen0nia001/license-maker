@@ -103,4 +103,13 @@ export async function clientSignOut(): Promise<void> {
 }
 
 /** A cancelled passkey prompt reads "cancelled", anything else as it is. */
-export const passkeyError = (e: unknown, what: string) => ((e as Error).name === 'NotAllowedError' ? `${what} was cancelled.` : (e as Error).message);
+/** The browser refused to make a passkey because this device (or the account it syncs with, e.g. Google Password
+ *  Manager) already holds one for this account: nothing to set up, just sign in. */
+export const alreadyHasPasskey = (e: unknown) => (e as Error)?.name === 'InvalidStateError';
+
+export const passkeyError = (e: unknown, what: string) =>
+  (e as Error).name === 'NotAllowedError'
+    ? `${what} was cancelled.`
+    : alreadyHasPasskey(e)
+      ? 'This device already has your passkey (it may have come with your Google or Apple account): just sign in with it.'
+      : (e as Error).message;
