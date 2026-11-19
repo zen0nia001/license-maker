@@ -214,11 +214,39 @@ const REQUEST_TEXT: Record<string, string> = {
 };
 
 const MyInstalls: React.FC<{ installs: MyInstallation[]; installers: MyInstaller[]; onChange: () => Promise<void> }> = ({ installs, installers, onChange }) => {
-  if (installs.length === 0) {
-    return <Card><Empty icon={<Icon name="apps" size={30} />}>Nothing here yet. Your provider links your installations to your page.</Empty></Card>;
-  }
-  return <>{installs.map((i) => <MyInstall key={i.id} install={i} installer={installers.find((x) => x.product.id === i.product.id) ?? null} onChange={onChange} />)}</>;
+  // Installers of apps not installed here yet (the provider shared them): to download and install.
+  const toInstall = installers.filter((x) => !installs.some((i) => i.product.id === x.product.id));
+  return (
+    <>
+      {toInstall.length > 0 && <MyDownloads installers={toInstall} />}
+      {installs.length === 0 && toInstall.length === 0 && (
+        <Card><Empty icon={<Icon name="apps" size={30} />}>Nothing here yet. Your provider links your installations to your page.</Empty></Card>
+      )}
+      {installs.map((i) => <MyInstall key={i.id} install={i} installer={installers.find((x) => x.product.id === i.product.id) ?? null} onChange={onChange} />)}
+    </>
+  );
 };
+
+/** Installers the provider shared, for apps not installed yet: download, then install on the computer. */
+const MyDownloads: React.FC<{ installers: MyInstaller[] }> = ({ installers }) => (
+  <Card title="Ready to install">
+    <ul className="list">
+      {installers.map((x) => (
+        <li key={x.product.id}>
+          <div className="who">{x.product.name}</div>
+          <div className="meta">{x.filename} · {Math.max(1, Math.round(x.size / 1024))} KB</div>
+          <div className="acts">
+            <ActionButton className="primary small" onClick={() => clientDownload(`/client/installers/${encodeURIComponent(x.product.id)}/file`, x.filename)}>Download</ActionButton>
+          </div>
+          <div className="wide small muted">
+            Download it on the computer where {x.product.name} will run, then double-click it. If Windows says "Windows protected your PC",
+            click More info → Run anyway. When {x.product.name} opens, tap Ask my provider for a free trial.
+          </div>
+        </li>
+      ))}
+    </ul>
+  </Card>
+);
 
 const MyInstall: React.FC<{ install: MyInstallation; installer: MyInstaller | null; onChange: () => Promise<void> }> = ({ install: i, installer, onChange }) => {
   const [renewing, setRenewing] = useState(false);

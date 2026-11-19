@@ -58,6 +58,7 @@ export const SendInstaller: React.FC<{
       ) : (
         <>
           <p className="small">Send this to {first}. The link is shown only now; it works until {day(made.expiresAt)}, {made.maxDownloads} downloads.</p>
+          {clientId && <p className="small muted">It also shows on {first}'s own page (Ready to install) until then: if they can sign in, they'll find it there without the link.</p>}
           <div className="mono small" style={{ overflowWrap: 'anywhere' }}>{made.link}</div>
           <div className="row" style={{ alignItems: 'center' }}>
             <div style={{ flex: '0 0 auto' }}><CopyButton text={message} label="Copy message" className="primary small" /></div>
