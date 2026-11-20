@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import type { StoreDetails } from '../../lib/control/types';
 import { href } from '../../router';
 import { Icon, Logo } from '../../components/Icon';
-import { loadStore } from '../store/Store';
+import { DEFAULT_STORE_NAME, loadStore } from '../store/Store';
 
 type Step = { title: string; lead: React.ReactNode; points?: React.ReactNode[]; note?: React.ReactNode };
 
@@ -93,7 +93,7 @@ export const GuidePage: React.FC = () => {
   useEffect(() => {
     loadStore().then((d) => setStore(d.store), () => setStore(null));
   }, []);
-  const name = store?.name || 'Apps';
+  const name = store?.name || DEFAULT_STORE_NAME;
   useEffect(() => {
     document.title = `How it works · ${name}`;
   }, [name]);

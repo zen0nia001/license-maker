@@ -1,23 +1,24 @@
-// Payment screenshots, shrunk on the client's own device before they're sent: a phone screenshot (0.5–2 MB) becomes a
-// JPEG of about 100 KB at most 1080 px wide, which keeps a receipt's text readable and Control's free storage small.
+// Pictures are made small on this device before they're sent, so Control's free storage stays small:
+//   - a client's payment screenshot: a JPEG at most 1080 px wide, about 100–250 KB (Control: at most 400 KB);
+//   - an app's preview image on the store: a JPEG at most 1600 px wide, about 150–500 KB (Control: at most 700 KB).
 
-/** Control refuses anything larger (src/licensing/proofs.ts PROOF_MAX_BYTES is 400 KB); aim well under it. */
-const TARGET_BYTES = 250 * 1024;
+type Shrunk = { blob: Blob; width: number; height: number };
 
 const toBlob = (canvas: HTMLCanvasElement, quality: number) =>
   new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
 
-/** The picture as a small JPEG, or an error in plain words (not a picture, or one this browser can't open). */
-export async function shrinkScreenshot(file: File): Promise<Blob> {
-  if (!file.type.startsWith('image/')) throw new Error('Choose a picture: a screenshot of the receipt.');
+/** Tries each (width, quality) in turn until the JPEG fits `target`; the last one is kept if it still fits `limit`. */
+async function shrink(file: File, steps: readonly (readonly [number, number])[], target: number, limit: number, notAPicture: string): Promise<Shrunk> {
+  if (!file.type.startsWith('image/')) throw new Error(notAPicture);
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file);
   } catch {
-    throw new Error("That picture can't be opened here. Take a screenshot of the receipt and choose that.");
+    throw new Error("That picture can't be opened here. Take a screenshot and choose that.");
   }
   try {
-    for (const [width, quality] of [[1080, 0.75], [900, 0.65], [720, 0.55]] as const) {
+    for (let i = 0; i < steps.length; i++) {
+      const [width, quality] = steps[i]!;
       const scale = Math.min(1, width / bitmap.width);
       const canvas = document.createElement('canvas');
       canvas.width = Math.max(1, Math.round(bitmap.width * scale));
@@ -28,11 +29,22 @@ export async function shrinkScreenshot(file: File): Promise<Blob> {
       g.fillRect(0, 0, canvas.width, canvas.height);
       g.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
       const blob = await toBlob(canvas, quality);
-      if (blob && blob.size <= TARGET_BYTES) return blob;
-      if (blob && width === 720) return blob; // a very long screenshot: still far under Control's limit
+      if (!blob) break;
+      const last = i === steps.length - 1;
+      if (blob.size <= target || (last && blob.size <= limit)) return { blob, width: canvas.width, height: canvas.height };
     }
   } finally {
     bitmap.close();
   }
-  throw new Error("That picture can't be made small enough. Take a screenshot of just the receipt.");
+  throw new Error("That picture can't be made small enough. Crop it to what matters and try again.");
 }
+
+/** A client's receipt screenshot, as a small JPEG. */
+export async function shrinkScreenshot(file: File): Promise<Blob> {
+  const { blob } = await shrink(file, [[1080, 0.75], [900, 0.65], [720, 0.55]], 250 * 1024, 380 * 1024, 'Choose a picture: a screenshot of the receipt.');
+  return blob;
+}
+
+/** An app's preview image for the store, as a JPEG with its size (for the store's layout). */
+export const shrinkPreview = (file: File): Promise<Shrunk> =>
+  shrink(file, [[1600, 0.82], [1440, 0.75], [1280, 0.7], [1024, 0.65]], 500 * 1024, 680 * 1024, 'Choose a picture: a screenshot of the app.');

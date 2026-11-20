@@ -6,6 +6,7 @@ import { useControl } from '../../state/control';
 import { AppIcon } from '../../components/AppIcon';
 import { Card, Chip, Field, Msg, Say } from '../../components/ui';
 import { StoreAppDetail } from '../store/Store';
+import { PreviewImages, type Shots } from './PreviewImages';
 import type { TabProps } from './AppPage';
 
 type Draft = {
@@ -25,6 +26,7 @@ export const Listing: React.FC<TabProps> = ({ product }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [shots, setShots] = useState<Shots>({ images: [], urls: {} });
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => { setDraft((d) => ({ ...d, [k]: v })); setSaved(false); };
   const features = draft.features.split('\n').map((l) => l.trim()).filter(Boolean);
   const preview: Product = { ...product, ...draft, tagline: draft.tagline || null, description: draft.description || null, icon: draft.icon || null, priceMonthly: draft.priceMonthly || null, priceYearly: draft.priceYearly || null, features };
@@ -48,6 +50,7 @@ export const Listing: React.FC<TabProps> = ({ product }) => {
 
   return (
     <div className="cols two">
+      <div className="stack">
       <Card title="Store listing" actions={<Chip tone={product.published ? 'ok' : 'info'}>{product.published ? 'On the store' : 'Not published'}</Chip>}>
         <div className="row">
           <Field label="Name"><input value={draft.name} maxLength={40} onChange={(e) => set('name', e.target.value)} /></Field>
@@ -72,6 +75,8 @@ export const Listing: React.FC<TabProps> = ({ product }) => {
         {saved && <Msg tone="ok">Saved.{draft.published ? <> It's on <a href={href.store(product.id)}>the store</a>.</> : ''}</Msg>}
         <button className="primary" disabled={busy} onClick={() => void save()}>{busy ? 'Saving…' : 'Save listing'}</button>
       </Card>
+      <PreviewImages productId={product.id} appName={product.name} onChange={setShots} />
+      </div>
       <div className="stack" style={{ gap: 10 }}>
         <p className="small muted">Preview: how clients see it</p>
         <div className="store-preview">
@@ -79,7 +84,7 @@ export const Listing: React.FC<TabProps> = ({ product }) => {
             <AppIcon app={preview} size={40} />
             <span className="small muted">On the store's list: {preview.name}{preview.tagline ? ` · ${preview.tagline}` : ''}</span>
           </div>
-          <StoreAppDetail app={preview} store={null} />
+          <StoreAppDetail app={{ ...preview, images: shots.images }} store={null} imageUrl={(id) => shots.urls[id] ?? ''} />
         </div>
       </div>
     </div>

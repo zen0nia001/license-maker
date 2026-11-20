@@ -1,5 +1,8 @@
 // Control's owner API, as this app reads it (Control: src/routes/*.ts).
 
+/** One of an app's preview images on the store (Control: src/store/images.ts imageView). */
+export type StoreImage = { id: string; caption: string | null; width: number | null; height: number | null; size: number; uploadedAt: string };
+
 /** An app as the public store shows it (Control: src/store/listing.ts publicView). */
 export type Listing = {
   id: string;
@@ -13,6 +16,8 @@ export type Listing = {
   features: string[];
   /** The store form gives a download link at once (the owner's Instant download, and an installer). Public store only. */
   download?: boolean;
+  /** Its preview images, in order (the first is on the store card). Public store only. */
+  images?: StoreImage[];
 };
 
 /** An app as the owner sees it: its listing, and what Control knows of it (ownerView). */

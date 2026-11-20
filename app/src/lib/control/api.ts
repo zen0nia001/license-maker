@@ -115,13 +115,14 @@ export async function api<T>(method: string, path: string, body?: unknown): Prom
   return answer<T>(res);
 }
 
-/** Uploads a file as the request body (the owner's installers: PUT /owner/installers/:app?name=…). */
-export async function apiUpload<T>(path: string, file: Blob): Promise<T> {
+/** Uploads a file as the request body (the owner's installers: PUT /owner/installers/:app?name=…; an app's preview
+ *  images: POST /owner/products/:app/images?caption=…). */
+export async function apiUpload<T>(path: string, file: Blob, method: 'PUT' | 'POST' = 'PUT'): Promise<T> {
   if (!CONTROL_URL) throw new Error('Control is not set up for this address.');
   let res: Response;
   try {
     res = await fetch(CONTROL_URL + path, {
-      method: 'PUT',
+      method,
       headers: { 'Content-Type': 'application/octet-stream', ...(memory ? { Authorization: `Bearer ${memory.token}` } : {}) },
       body: file,
       cache: 'no-store',
@@ -164,7 +165,10 @@ export async function clientUpload<T>(path: string, file: Blob): Promise<T> {
   return answer<T>(res);
 }
 
-/** A file the owner opens (a client's payment screenshot), as a Blob. */
+/** A picture on the public store (an app's preview image), by its id. */
+export const storeImageUrl = (id: string) => `${CONTROL_URL ?? ''}/store/images/${encodeURIComponent(id)}`;
+
+/** A file the owner opens (a client's payment screenshot, an app's preview image), as a Blob. */
 export async function apiBlob(path: string): Promise<Blob> {
   const res = await request('GET', path, undefined, memory?.token);
   if (!res.ok) await answer(res);
