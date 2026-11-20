@@ -438,3 +438,14 @@ li:not(.todo) .inbox-title { font-weight: 550; color: var(--ink-2); }
 .shot-acts { gap: 6px; flex-wrap: wrap; align-items: center; }
 .shot-acts > * { flex: 0 0 auto; }
 .store-brand > span:last-child { white-space: nowrap; }
+/* A store card's pictures as an accordion: one open wide, the others slim; they take turns (Store.tsx ShotAccordion). */
+.shot-accordion { display: flex; gap: 3px; width: 100%; height: 100%; background: var(--line); }
+.shot-panel { position: relative; flex: 1 1 0; min-width: 0; overflow: hidden; background: var(--surface-2); cursor: pointer; transition: flex-grow .55s cubic-bezier(.2, .7, .2, 1); }
+.shot-panel.open { flex-grow: 7; cursor: inherit; }
+.shot-panel img { width: 100%; height: 100%; object-fit: cover; object-position: 62% top; display: block; filter: grayscale(.6) brightness(.72); transition: filter .4s, transform .55s; }
+.shot-panel.open img { filter: none; }
+.store-card:hover .shot-panel.open img { transform: scale(1.02); }
+.shot-cap { position: absolute; left: 12px; bottom: 12px; max-width: calc(100% - 24px); padding: 4px 11px; border-radius: 999px; font-size: .8rem; font-weight: 650;
+  color: #fff; background: rgba(10, 10, 10, .74); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; transform: translateY(6px); transition: opacity .3s, transform .3s; pointer-events: none; }
+.shot-panel.open .shot-cap { opacity: 1; transform: none; transition-delay: .2s; }
+@media (prefers-reduced-motion: reduce) { .shot-panel, .shot-panel img, .shot-cap { transition: none; } }

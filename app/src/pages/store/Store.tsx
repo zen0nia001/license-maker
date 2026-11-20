@@ -10,8 +10,8 @@ import { isAmount, peso } from '../../lib/price';
 
 type StoreData = { store: StoreDetails; apps: Listing[] };
 
-/** The store's name and line until the owner sets their own (Settings → Your store). "Negosyo": business. */
-export const DEFAULT_STORE_NAME = 'Negosyo Apps';
+/** The store's name until the owner sets their own (Settings → Your store): APPHUB, the hub for every app. */
+export const DEFAULT_STORE_NAME = 'APPHUB';
 const DEFAULT_ABOUT = 'Point of sale, records and payroll for small shops and hubs. Installed on your own computer, with help from a real person.';
 
 /** The public store: no sign-in, no session sent (Control's /store is public and read only). */
@@ -120,13 +120,48 @@ export const StorePage: React.FC<{ app: string | null }> = ({ app }) => {
   );
 };
 
-/** An app on the store's list: its first preview image, what it is, three features, the price. */
+/** Seconds between the accordion opening its next picture by itself. */
+const ACCORDION_STEP_MS = 3800;
+
+/** An app's pictures side by side: one open wide, the others as slim panels; hovering (or tapping) one opens it, and
+ *  they take turns by themselves unless the device asks for less motion. */
+const ShotAccordion: React.FC<{ app: Listing; images: StoreImage[] }> = ({ app, images }) => {
+  const [open, setOpen] = useState(0);
+  const [held, setHeld] = useState(false);
+  useEffect(() => {
+    if (held || images.length < 2 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const timer = window.setInterval(() => setOpen((i) => (i + 1) % images.length), ACCORDION_STEP_MS);
+    return () => window.clearInterval(timer);
+  }, [held, images.length]);
+  return (
+    <div className="shot-accordion" onMouseLeave={() => setHeld(false)}>
+      {images.map((img, i) => (
+        <div
+          key={img.id}
+          className={`shot-panel${i === open ? ' open' : ''}`}
+          onMouseEnter={() => { setOpen(i); setHeld(true); }}
+          onClick={(e) => {
+            // A tap on a closed panel opens it; a tap on the open one follows the card's link.
+            if (i !== open) { e.preventDefault(); setOpen(i); setHeld(true); }
+          }}
+        >
+          <img src={storeImageUrl(img.id)} alt={img.caption ?? `${app.name} screenshot ${i + 1}`} loading={i === 0 ? 'eager' : 'lazy'} />
+          {img.caption && <span className="shot-cap">{img.caption}</span>}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/** An app on the store's list: its preview images, what it is, three features, the price. */
 const StoreCard: React.FC<{ app: Listing }> = ({ app }) => {
-  const shot = app.images?.[0];
+  const images = app.images ?? [];
   return (
     <a className="app-card store-card" href={href.store(app.id)}>
       <div className="app-shot">
-        {shot ? <img src={storeImageUrl(shot.id)} alt={shot.caption ?? `${app.name} screenshot`} loading="lazy" /> : <span className="app-shot-empty"><AppIcon app={app} size={64} /></span>}
+        {images.length > 1 ? <ShotAccordion app={app} images={images} />
+          : images.length === 1 ? <img src={storeImageUrl(images[0]!.id)} alt={images[0]!.caption ?? `${app.name} screenshot`} loading="lazy" />
+          : <span className="app-shot-empty"><AppIcon app={app} size={64} /></span>}
       </div>
       <div className="store-card-body">
         <div className="store-card-head">

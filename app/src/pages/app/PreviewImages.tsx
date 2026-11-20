@@ -55,7 +55,8 @@ export const PreviewImages: React.FC<{ productId: string; appName: string; onCha
     for (const file of list) {
       await run('adding', async () => {
         const { blob, width, height } = await shrinkPreview(file);
-        const caption = file.name.replace(/\.[a-z0-9]+$/i, '').replace(/[_-]+/g, ' ').replace(/^(screenshot|screen shot|img|image)\s*/i, '').slice(0, 120);
+        // "2 Ring up a sale.png" → "Ring up a sale" (a leading number only orders the files).
+        const caption = file.name.replace(/\.[a-z0-9]+$/i, '').replace(/[_-]+/g, ' ').replace(/^(screenshot|screen shot|img|image)\s*/i, '').replace(/^\d+[\s.)]+/, '').trim().slice(0, 120);
         const q = new URLSearchParams({ w: String(width), h: String(height), ...(caption && !/^\d[\d\s]*$/.test(caption) ? { caption } : {}) });
         return apiUpload<StoreImage[]>(`${base}?${q}`, blob, 'POST');
       });
