@@ -45,9 +45,19 @@ export const Icon: React.FC<{ name: IconName; size?: number; className?: string;
   </svg>
 );
 
-/** Control Center's mark: a spark on a gradient tile. */
+/** The mark's shapes (24 px grid, filled): a shop's awning over two app tiles, "apps for your shop". The app icons
+ *  (public/icon-*.png) are drawn from the same shapes. */
+export const MARK_PATHS = [
+  'M5 3.5h14a1 1 0 0 1 .9.57L21 8a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0l1.1-3.93A1 1 0 0 1 5 3.5z',
+  'M5.85 12.5h3.3a1.6 1.6 0 0 1 1.6 1.6v4.3a1.6 1.6 0 0 1-1.6 1.6h-3.3a1.6 1.6 0 0 1-1.6-1.6v-4.3a1.6 1.6 0 0 1 1.6-1.6z',
+  'M14.85 12.5h3.3a1.6 1.6 0 0 1 1.6 1.6v4.3a1.6 1.6 0 0 1-1.6 1.6h-3.3a1.6 1.6 0 0 1-1.6-1.6v-4.3a1.6 1.6 0 0 1 1.6-1.6z',
+];
+
+/** The mark on its tile (ink on light, light on dark). */
 export const Logo: React.FC<{ size?: number }> = ({ size = 34 }) => (
-  <span className="logo" style={{ width: size, height: size, borderRadius: size * 0.32 }} aria-hidden="true">
-    <Icon name="spark" size={size * 0.62} />
+  <span className="logo" style={{ width: size, height: size, borderRadius: size * 0.3 }} aria-hidden="true">
+    <svg width={size * 0.66} height={size * 0.66} viewBox="0 0 24 24" fill="currentColor" style={{ flex: 'none' }}>
+      {MARK_PATHS.map((d) => <path key={d} d={d} />)}
+    </svg>
   </span>
 );
