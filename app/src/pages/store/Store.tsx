@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { CONTROL_URL, storeImageUrl } from '../../lib/control/api';
 import type { Listing, StoreDetails, StoreImage } from '../../lib/control/types';
 import { href } from '../../router';
@@ -120,24 +120,62 @@ export const StorePage: React.FC<{ app: string | null }> = ({ app }) => {
   );
 };
 
-/** Seconds each picture takes to scroll past. */
-const MARQUEE_SECONDS_PER_PICTURE = 5;
+/** How long each picture stays before the next swipe in. */
+const CAROUSEL_STEP_MS = 5000;
+/** After someone swipes or scrolls by hand, wait this long before swiping by itself again. */
+const CAROUSEL_HAND_PAUSE_MS = 8000;
 
-/** An app's pictures in a strip that scrolls steadily from right to left, over and over: the set is drawn twice and
- *  the strip moves by exactly one set, so the loop has no seam. A hover pauses it; on a device that asks for less
- *  motion it stays still and can be swiped instead (styles.css). */
-const ShotMarquee: React.FC<{ app: Listing; images: StoreImage[] }> = ({ app, images }) => {
+/** An app's pictures one at a time, the next peeking in: every 5 seconds it swipes smoothly to the next, as a person
+ *  flicking through a gallery would. After the last it swipes on to a copy of the first and quietly jumps back, so it
+ *  never rewinds. A hover pauses it; a hand swipe takes over for a while; with less motion asked for, it only moves by
+ *  hand. Dots show which picture is in view. */
+const ShotCarousel: React.FC<{ app: Listing; images: StoreImage[] }> = ({ app, images }) => {
+  const scroller = useRef<HTMLDivElement>(null);
+  const [at, setAt] = useState(0);
+  const hovered = useRef(false);
+  const handAt = useRef(0);
+
+  /** The tiles, and the one nearest the start of the view (the copy of the first is last). */
+  const nearest = (el: HTMLDivElement) => {
+    const tiles = [...el.querySelectorAll<HTMLElement>('.shot-tile')];
+    const offset = (t: HTMLElement) => t.offsetLeft - tiles[0]!.offsetLeft;
+    let best = 0;
+    tiles.forEach((t, i) => { if (Math.abs(offset(t) - el.scrollLeft) < Math.abs(offset(tiles[best]!) - el.scrollLeft)) best = i; });
+    return { tiles, best, offset };
+  };
+  const onScroll = () => {
+    if (scroller.current) setAt(nearest(scroller.current).best % images.length);
+  };
+  const byHand = () => { handAt.current = Date.now(); };
+
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const timer = window.setInterval(() => {
+      const el = scroller.current;
+      if (!el || hovered.current || Date.now() - handAt.current < CAROUSEL_HAND_PAUSE_MS) return;
+      const { tiles, best, offset } = nearest(el);
+      const next = Math.min(best + 1, tiles.length - 1);
+      el.scrollTo({ left: offset(tiles[next]!), behavior: 'smooth' });
+      // Landed on the copy of the first: jump back to the real first, unseen.
+      if (next === tiles.length - 1) window.setTimeout(() => el.scrollTo({ left: 0, behavior: 'instant' as ScrollBehavior }), 900);
+    }, CAROUSEL_STEP_MS);
+    return () => window.clearInterval(timer);
+  }, [images.length]);
+
   const tile = (img: StoreImage, i: number, copy: boolean) => (
-    <div key={`${copy ? 'b' : 'a'}${img.id}`} className="shot-tile" aria-hidden={copy || undefined}>
-      <img src={storeImageUrl(img.id)} alt={copy ? '' : img.caption ?? `${app.name} screenshot ${i + 1}`} loading="lazy" draggable={false} />
+    <div key={`${copy ? 'copy' : 'img'}-${img.id}`} className="shot-tile" aria-hidden={copy || undefined}>
+      <img src={storeImageUrl(img.id)} alt={copy ? '' : img.caption ?? `${app.name} screenshot ${i + 1}`} loading={i === 0 ? 'eager' : 'lazy'} draggable={false} />
       {img.caption && <span className="shot-cap">{img.caption}</span>}
     </div>
   );
   return (
-    <div className="shot-marquee">
-      <div className="shot-track" style={{ animationDuration: `${images.length * MARQUEE_SECONDS_PER_PICTURE}s` }}>
+    <div className="shot-carousel" onMouseEnter={() => { hovered.current = true; }} onMouseLeave={() => { hovered.current = false; }}>
+      <div className="shot-scroller" ref={scroller} onScroll={onScroll} onPointerDown={byHand} onTouchStart={byHand} onWheel={byHand}>
         {images.map((img, i) => tile(img, i, false))}
-        {images.map((img, i) => tile(img, i, true))}
+        {tile(images[0]!, 0, true)}
+      </div>
+      <div className="shot-dots" aria-hidden="true">
+        {images.map((img, i) => <span key={img.id} className={i === at ? 'on' : undefined} />)}
       </div>
     </div>
   );
@@ -149,7 +187,7 @@ const StoreCard: React.FC<{ app: Listing }> = ({ app }) => {
   return (
     <a className="app-card store-card" href={href.store(app.id)}>
       <div className="app-shot">
-        {images.length > 1 ? <ShotMarquee app={app} images={images} />
+        {images.length > 1 ? <ShotCarousel app={app} images={images} />
           : images.length === 1 ? <img src={storeImageUrl(images[0]!.id)} alt={images[0]!.caption ?? `${app.name} screenshot`} loading="lazy" />
           : <span className="app-shot-empty"><AppIcon app={app} size={64} /></span>}
       </div>
