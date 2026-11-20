@@ -439,15 +439,13 @@ li:not(.todo) .inbox-title { font-weight: 550; color: var(--ink-2); }
 .shot-acts > * { flex: 0 0 auto; }
 .store-brand > span:last-child { white-space: nowrap; }
 /* A store card's pictures one at a time, swiping to the next every 5 seconds (Store.tsx ShotCarousel): a real scroller
-   that snaps to each picture, so people can swipe it too; the next one peeks in from the right. */
+   that snaps to each picture, so people can swipe it too; each picture fills the whole area, edge to edge. */
 .app-shot { position: relative; }
 .shot-carousel { position: absolute; inset: 0; }
-.shot-scroller { --pad: 14px; position: relative; height: 100%; display: flex; gap: 12px; padding: var(--pad); box-sizing: border-box; overflow-x: auto; overflow-y: hidden;
-  scroll-snap-type: x mandatory; scroll-padding-left: var(--pad); scrollbar-width: none; overscroll-behavior-x: contain;
-  -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); }
+.shot-scroller { position: relative; height: 100%; display: flex; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
 .shot-scroller::-webkit-scrollbar { display: none; }
-.shot-tile { position: relative; flex: none; height: 100%; aspect-ratio: 16 / 10; scroll-snap-align: start; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); box-shadow: 0 6px 18px rgba(0, 0, 0, .12); }
-.shot-tile:last-child { margin-right: 40%; }
+.shot-tile { position: relative; flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; background: var(--surface-2); }
 .shot-tile img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; user-select: none; }
 .shot-cap { position: absolute; left: 10px; bottom: 10px; max-width: calc(100% - 20px); padding: 4px 11px; border-radius: 999px; font-size: .78rem; font-weight: 650;
   color: #fff; background: rgba(10, 10, 10, .74); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }

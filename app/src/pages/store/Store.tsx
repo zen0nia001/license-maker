@@ -125,7 +125,7 @@ const CAROUSEL_STEP_MS = 5000;
 /** After someone swipes or scrolls by hand, wait this long before swiping by itself again. */
 const CAROUSEL_HAND_PAUSE_MS = 8000;
 
-/** An app's pictures one at a time, the next peeking in: every 5 seconds it swipes smoothly to the next, as a person
+/** An app's pictures one at a time, each filling the whole area: every 5 seconds it swipes smoothly to the next, as a person
  *  flicking through a gallery would. After the last it swipes on to a copy of the first and quietly jumps back, so it
  *  never rewinds. A hover pauses it; a hand swipe takes over for a while; with less motion asked for, it only moves by
  *  hand. Dots show which picture is in view. */
