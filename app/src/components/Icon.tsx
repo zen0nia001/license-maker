@@ -45,12 +45,14 @@ export const Icon: React.FC<{ name: IconName; size?: number; className?: string;
   </svg>
 );
 
-/** The mark's shapes (24 px grid, filled): a shop's awning over two app tiles, "apps for your shop". The app icons
- *  (public/icon-*.png) are drawn from the same shapes. */
+/** APPHUB's mark (24 px grid, filled): four app tiles around a round hub, each tile's inner corner curved around it:
+ *  "your apps, in one hub". The app icons (public/icon-*.png, icon.svg) are drawn from the same shapes. */
 export const MARK_PATHS = [
-  'M5 3.5h14a1 1 0 0 1 .9.57L21 8a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0l1.1-3.93A1 1 0 0 1 5 3.5z',
-  'M5.85 12.5h3.3a1.6 1.6 0 0 1 1.6 1.6v4.3a1.6 1.6 0 0 1-1.6 1.6h-3.3a1.6 1.6 0 0 1-1.6-1.6v-4.3a1.6 1.6 0 0 1 1.6-1.6z',
-  'M14.85 12.5h3.3a1.6 1.6 0 0 1 1.6 1.6v4.3a1.6 1.6 0 0 1-1.6 1.6h-3.3a1.6 1.6 0 0 1-1.6-1.6v-4.3a1.6 1.6 0 0 1 1.6-1.6z',
+  'M5.2 3H8.8A2.2 2.2 0 0 1 11 5.2V6.49A5.6 5.6 0 0 0 6.49 11H5.2A2.2 2.2 0 0 1 3 8.8V5.2A2.2 2.2 0 0 1 5.2 3Z',
+  'M15.2 3H18.8A2.2 2.2 0 0 1 21 5.2V8.8A2.2 2.2 0 0 1 18.8 11H17.51A5.6 5.6 0 0 0 13 6.49V5.2A2.2 2.2 0 0 1 15.2 3Z',
+  'M5.2 13H6.49A5.6 5.6 0 0 0 11 17.51V18.8A2.2 2.2 0 0 1 8.8 21H5.2A2.2 2.2 0 0 1 3 18.8V15.2A2.2 2.2 0 0 1 5.2 13Z',
+  'M17.51 13H18.8A2.2 2.2 0 0 1 21 15.2V18.8A2.2 2.2 0 0 1 18.8 21H15.2A2.2 2.2 0 0 1 13 18.8V17.51A5.6 5.6 0 0 0 17.51 13Z',
+  'M12 8.4A3.6 3.6 0 1 1 12 15.6A3.6 3.6 0 1 1 12 8.4Z',
 ];
 
 /** The mark on its tile (ink on light, light on dark). */
