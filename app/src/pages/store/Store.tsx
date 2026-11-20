@@ -120,35 +120,25 @@ export const StorePage: React.FC<{ app: string | null }> = ({ app }) => {
   );
 };
 
-/** Seconds between the accordion opening its next picture by itself. */
-const ACCORDION_STEP_MS = 3800;
+/** Seconds each picture takes to scroll past. */
+const MARQUEE_SECONDS_PER_PICTURE = 5;
 
-/** An app's pictures side by side: one open wide, the others as slim panels; hovering (or tapping) one opens it, and
- *  they take turns by themselves unless the device asks for less motion. */
-const ShotAccordion: React.FC<{ app: Listing; images: StoreImage[] }> = ({ app, images }) => {
-  const [open, setOpen] = useState(0);
-  const [held, setHeld] = useState(false);
-  useEffect(() => {
-    if (held || images.length < 2 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-    const timer = window.setInterval(() => setOpen((i) => (i + 1) % images.length), ACCORDION_STEP_MS);
-    return () => window.clearInterval(timer);
-  }, [held, images.length]);
+/** An app's pictures in a strip that scrolls steadily from right to left, over and over: the set is drawn twice and
+ *  the strip moves by exactly one set, so the loop has no seam. A hover pauses it; on a device that asks for less
+ *  motion it stays still and can be swiped instead (styles.css). */
+const ShotMarquee: React.FC<{ app: Listing; images: StoreImage[] }> = ({ app, images }) => {
+  const tile = (img: StoreImage, i: number, copy: boolean) => (
+    <div key={`${copy ? 'b' : 'a'}${img.id}`} className="shot-tile" aria-hidden={copy || undefined}>
+      <img src={storeImageUrl(img.id)} alt={copy ? '' : img.caption ?? `${app.name} screenshot ${i + 1}`} loading="lazy" draggable={false} />
+      {img.caption && <span className="shot-cap">{img.caption}</span>}
+    </div>
+  );
   return (
-    <div className="shot-accordion" onMouseLeave={() => setHeld(false)}>
-      {images.map((img, i) => (
-        <div
-          key={img.id}
-          className={`shot-panel${i === open ? ' open' : ''}`}
-          onMouseEnter={() => { setOpen(i); setHeld(true); }}
-          onClick={(e) => {
-            // A tap on a closed panel opens it; a tap on the open one follows the card's link.
-            if (i !== open) { e.preventDefault(); setOpen(i); setHeld(true); }
-          }}
-        >
-          <img src={storeImageUrl(img.id)} alt={img.caption ?? `${app.name} screenshot ${i + 1}`} loading={i === 0 ? 'eager' : 'lazy'} />
-          {img.caption && <span className="shot-cap">{img.caption}</span>}
-        </div>
-      ))}
+    <div className="shot-marquee">
+      <div className="shot-track" style={{ animationDuration: `${images.length * MARQUEE_SECONDS_PER_PICTURE}s` }}>
+        {images.map((img, i) => tile(img, i, false))}
+        {images.map((img, i) => tile(img, i, true))}
+      </div>
     </div>
   );
 };
@@ -159,7 +149,7 @@ const StoreCard: React.FC<{ app: Listing }> = ({ app }) => {
   return (
     <a className="app-card store-card" href={href.store(app.id)}>
       <div className="app-shot">
-        {images.length > 1 ? <ShotAccordion app={app} images={images} />
+        {images.length > 1 ? <ShotMarquee app={app} images={images} />
           : images.length === 1 ? <img src={storeImageUrl(images[0]!.id)} alt={images[0]!.caption ?? `${app.name} screenshot`} loading="lazy" />
           : <span className="app-shot-empty"><AppIcon app={app} size={64} /></span>}
       </div>
